@@ -6,6 +6,8 @@
 #include <stdint.h>
 #include <ble_advdata.h>
 
+#include "nrf51.h"
+#include "nrf_soc.h"
 #include "ble_radio_notification.h"
 #include "softdevice_handler.h"
 #include "bsp.h"
@@ -22,6 +24,15 @@
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
+
+#define FICR_DEVICEADDR   ((uint8_t*) &NRF_FICR->DEVICEADDR[0])
+
+#define SERVICE_DATA_OFFSET  0x07
+
+#define URL_PREFIX__http_www     0x00
+#define URL_PREFIX__https_www    0x01
+#define URL_PREFIX__http         0x02
+#define URL_PREFIX__https        0x03
 
 static edstn_frame_t edstn_frames[3];
 
@@ -137,24 +148,30 @@ static uint16_t battery_level_get(void)
 {
 #if defined(PROVISION_BATTERY)
 
+    /* Configure for ADC conversion */
     NRF_ADC->CONFIG = battery_adc_config;
 
     NRF_ADC->EVENTS_END = 0;
     NRF_ADC->ENABLE = ADC_ENABLE_ENABLE_Enabled;
 
-    NRF_ADC->EVENTS_END = 0;    // Stop any running conversions.
+    /* Stop any running conversions. */
+    NRF_ADC->EVENTS_END = 0;    
+
+    /* Start new conversion */
     NRF_ADC->TASKS_START = 1;
 
     while (!NRF_ADC->EVENTS_END) { /* spin: wait for conversion */ }
 
     uint16_t voltage_in_mv = ADC_RESULT_IN_MILLI_VOLTS(NRF_ADC->RESULT);
 
+    /* Stop conversion task */
     NRF_ADC->EVENTS_END = 0;
     NRF_ADC->TASKS_STOP = 1;
 
     return voltage_in_mv;
+
 #else
-    return 0x0000;  // "not supported" value
+    return 0x0000;  /* "not supported" value */s
 #endif
 }
 
@@ -170,20 +187,20 @@ static void build_tlm_frame_buffer()
 
     encoded_advdata[(*len_advdata)++] = 0x00; // Version
 
-    // Battery voltage, 1 mV/bit
+    /* Battery voltage, 1 mV/bit */
     eddystone_uint16(encoded_advdata, len_advdata, battery_level_get());
 
-    // Beacon temperature
+    /* Beacon temperature */
     eddystone_uint16(encoded_advdata, len_advdata, temperature_data_get());
 
-    // Advertising PDU count
+    /* Advertising PDU count */
     eddystone_uint32(encoded_advdata, len_advdata, pdu_count);
 
-    // Time since power-on or reboot
+    /* Time since power-on or reboot */
     *len_advdata += big32cpy(encoded_advdata + *len_advdata, pdu_count);
 
-    // Length   Service Data. Ibid. § 1.11
-    encoded_advdata[0x07] = (*len_advdata) - 8;
+    /* Length   Service Data. Ibid. § 1.11 */
+    encoded_advdata[SERVICE_DATA_OFFSET] = (*len_advdata) - 8;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -197,14 +214,14 @@ static void build_url_frame_buffer()
     eddystone_head_encode(encoded_advdata, 0x10, len_advdata);
 
     encoded_advdata[(*len_advdata)++] = APP_MEASURED_RSSI;
-    encoded_advdata[(*len_advdata)++] = 0x02;
+    encoded_advdata[(*len_advdata)++] = URL_PREFIX__http;
 
-    // set URL string
+    /* set URL string */
     memcpy(&encoded_advdata[(*len_advdata)], URL_STRING, URL_LENGTH);
     *len_advdata += URL_LENGTH;
 
-    // Length   Service Data. Ibid. § 1.11
-    encoded_advdata[0x07] = (*len_advdata) - 8;
+    /* Length   Service Data. Ibid. § 1.11 */
+    encoded_advdata[SERVICE_DATA_OFFSET] = (*len_advdata) - 8;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -218,28 +235,26 @@ static void build_uid_frame_buffer()
     eddystone_head_encode(encoded_advdata, 0x00, len_advdata);
 
     encoded_advdata[(*len_advdata)++] = APP_MEASURED_RSSI;
-    encoded_advdata[(*len_advdata)++] = 0x00;
-    encoded_advdata[(*len_advdata)++] = 0x01;
-    encoded_advdata[(*len_advdata)++] = 0x02;
-    encoded_advdata[(*len_advdata)++] = 0x03;
-    encoded_advdata[(*len_advdata)++] = 0x04;
-    encoded_advdata[(*len_advdata)++] = 0x05;
-    encoded_advdata[(*len_advdata)++] = 0x06;
-    encoded_advdata[(*len_advdata)++] = 0x07;
-    encoded_advdata[(*len_advdata)++] = 0x08;
-    encoded_advdata[(*len_advdata)++] = 0x09;
 
-    encoded_advdata[(*len_advdata)++] = 0x00;
-    encoded_advdata[(*len_advdata)++] = 0x01;
-    encoded_advdata[(*len_advdata)++] = 0x02;
-    encoded_advdata[(*len_advdata)++] = 0x03;
-    encoded_advdata[(*len_advdata)++] = 0x04;
-    encoded_advdata[(*len_advdata)++] = 0x05;
-    encoded_advdata[(*len_advdata)++] = 0x00;  // RFU field must be 0x00
-    encoded_advdata[(*len_advdata)++] = 0x00;  // RFU field must be 0x00
+    /* Set Namespace */
+    static const uint8_t namespace[] = UID_NAMESPACE;
+    memcpy(&encoded_advdata[(*len_advdata)], &namespace, sizeof(namespace));
+    *len_advdata += sizeof(namespace);
 
-    // Length   Service Data. Ibid. § 1.11
-    encoded_advdata[0x07] = (*len_advdata) - 8;
+    /* Set Beacon Id (BID) */
+    encoded_advdata[(*len_advdata)++] = FICR_DEVICEADDR[5];
+    encoded_advdata[(*len_advdata)++] = FICR_DEVICEADDR[4];
+    encoded_advdata[(*len_advdata)++] = FICR_DEVICEADDR[3];
+    encoded_advdata[(*len_advdata)++] = FICR_DEVICEADDR[2];
+    encoded_advdata[(*len_advdata)++] = FICR_DEVICEADDR[1];
+    encoded_advdata[(*len_advdata)++] = FICR_DEVICEADDR[0];
+
+    /* RFU field must be 0x00 */
+    encoded_advdata[(*len_advdata)++] = 0x00;
+    encoded_advdata[(*len_advdata)++] = 0x00; 
+
+    /* Length   Service Data. Ibid. § 1.11 */
+    encoded_advdata[SERVICE_DATA_OFFSET] = (*len_advdata) - 8;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -253,11 +268,11 @@ static void advertising_init(void)
 
     eddystone_set_adv_data(EDDYSTONE_UID);
 
-    // Initialize advertising parameters (used when starting advertising).
+    /* Initialize advertising parameters (used when starting advertising). */
     memset(&m_adv_params, 0, sizeof(m_adv_params));
 
     m_adv_params.type = BLE_GAP_ADV_TYPE_ADV_NONCONN_IND;
-    m_adv_params.p_peer_addr = NULL;   // Undirected advertisement.
+    m_adv_params.p_peer_addr = NULL;             // Undirected advertisement.
     m_adv_params.fp = BLE_GAP_ADV_FP_ANY;
     m_adv_params.interval = NON_CONNECTABLE_ADV_INTERVAL;
     m_adv_params.timeout = APP_CFG_NON_CONN_ADV_TIMEOUT;
@@ -278,17 +293,13 @@ static void advertising_start(void)
 /*---------------------------------------------------------------------------*/
 static void ble_stack_init(void)
 {
-    // Initialize the SoftDevice handler module.
+    /* Initialize the SoftDevice handler module. */
     SOFTDEVICE_HANDLER_INIT(NRF_CLOCK_LFCLKSRC_XTAL_20_PPM, NULL);
 
-    // Enable BLE stack 
+    /* Enable BLE stack */ 
     ble_enable_params_t ble_enable_params;
     memset(&ble_enable_params, 0, sizeof(ble_enable_params));
 
-#ifdef S130
-    ble_enable_params.gatts_enable_params.attr_tab_size = BLE_GATTS_ATTR_TAB_SIZE_DEFAULT;
-#endif
-    
     ble_enable_params.gatts_enable_params.service_changed = IS_SRVC_CHANGED_CHARACT_PRESENT;
 
     APP_ERROR_CHECK( sd_ble_enable(&ble_enable_params) );
@@ -331,7 +342,7 @@ int main(void)
 {
     uint32_t err_code;
 
-    // Initialize.
+    /* Initialize. */
     APP_TIMER_INIT(APP_TIMER_PRESCALER,
                    APP_TIMER_MAX_TIMERS,
                    APP_TIMER_OP_QUEUE_SIZE,
@@ -358,10 +369,10 @@ int main(void)
 
     APP_ERROR_CHECK(err_code);
 
-    // Start execution.
+    /* Start execution. */
     advertising_start();
 
-    // Enter main loop.
+    /* Enter main loop. */
     for (;;) {
         power_manage();
     }

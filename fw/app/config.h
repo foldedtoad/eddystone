@@ -34,10 +34,10 @@
 #define URL_STRING                      "google.com"
 #define URL_LENGTH                      (sizeof(URL_STRING) - 1)
 
-
-#if defined(USE_UICR_FOR_MAJ_MIN_VALUES)
-  #define MAJ_VAL_OFFSET_IN_BEACON_INFO   18                              /* Position of the MSB of the Major Value in m_beacon_info array. */
-  #define UICR_ADDRESS                    0x10001080                      /* Address of the UICR register used by this example. The major and minor versions to be encoded into the advertising data will be picked up from this location. */
-#endif
+/*
+ *  8C257BA1-E4F7-4026-A735-B6C01043EEA4  UUID  (generated with uuidgen)
+ *  8C257BA1B6C01043EEA4                  Namespace
+ */
+#define UID_NAMESPACE                   {0x8C,0x25,0x7B,0xA1,0xB6,0xC0,0x10,0x43,0xEE,0xA4}
 
 #endif /* _CONFIG_H__ */
