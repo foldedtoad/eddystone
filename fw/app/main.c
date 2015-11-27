@@ -27,12 +27,22 @@
 
 #define FICR_DEVICEADDR   ((uint8_t*) &NRF_FICR->DEVICEADDR[0])
 
+#define EDDYSTONE_UID_TYPE    0x00
+#define EDDYSTONE_URL_TYPE    0x10
+#define EDDYSTONE_TLM_TYPE    0x20
+
 #define SERVICE_DATA_OFFSET  0x07
 
 #define URL_PREFIX__http_www     0x00
 #define URL_PREFIX__https_www    0x01
 #define URL_PREFIX__http         0x02
 #define URL_PREFIX__https        0x03
+
+#define TLM_VERSION   0x00
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
 
 static edstn_frame_t edstn_frames[3];
 
@@ -183,9 +193,9 @@ static void build_tlm_frame_buffer()
     uint8_t * encoded_advdata = edstn_frames[EDDYSTONE_TLM].adv_frame;
     uint8_t * len_advdata     = &edstn_frames[EDDYSTONE_TLM].adv_len;
 
-    eddystone_head_encode(encoded_advdata, 0x20, len_advdata);
+    eddystone_head_encode(encoded_advdata, EDDYSTONE_TLM_TYPE, len_advdata);
 
-    encoded_advdata[(*len_advdata)++] = 0x00; // Version
+    encoded_advdata[(*len_advdata)++] = TLM_VERSION;
 
     /* Battery voltage, 1 mV/bit */
     eddystone_uint16(encoded_advdata, len_advdata, battery_level_get());
@@ -211,7 +221,7 @@ static void build_url_frame_buffer()
     uint8_t * encoded_advdata = edstn_frames[EDDYSTONE_URL].adv_frame;
     uint8_t * len_advdata     = &edstn_frames[EDDYSTONE_URL].adv_len;
 
-    eddystone_head_encode(encoded_advdata, 0x10, len_advdata);
+    eddystone_head_encode(encoded_advdata, EDDYSTONE_URL_TYPE, len_advdata);
 
     encoded_advdata[(*len_advdata)++] = APP_MEASURED_RSSI;
     encoded_advdata[(*len_advdata)++] = URL_PREFIX__http;
@@ -232,7 +242,7 @@ static void build_uid_frame_buffer()
     uint8_t * encoded_advdata = edstn_frames[EDDYSTONE_UID].adv_frame;
     uint8_t * len_advdata     = &edstn_frames[EDDYSTONE_UID].adv_len;
 
-    eddystone_head_encode(encoded_advdata, 0x00, len_advdata);
+    eddystone_head_encode(encoded_advdata, EDDYSTONE_UID_TYPE, len_advdata);
 
     encoded_advdata[(*len_advdata)++] = APP_MEASURED_RSSI;
 
@@ -272,7 +282,7 @@ static void advertising_init(void)
     memset(&m_adv_params, 0, sizeof(m_adv_params));
 
     m_adv_params.type = BLE_GAP_ADV_TYPE_ADV_NONCONN_IND;
-    m_adv_params.p_peer_addr = NULL;             // Undirected advertisement.
+    m_adv_params.p_peer_addr = NULL;           /* Undirected advertisement. */
     m_adv_params.fp = BLE_GAP_ADV_FP_ANY;
     m_adv_params.interval = NON_CONNECTABLE_ADV_INTERVAL;
     m_adv_params.timeout = APP_CFG_NON_CONN_ADV_TIMEOUT;
