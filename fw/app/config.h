@@ -31,7 +31,10 @@
 #define APP_SERVICE_HANDLE_START        0x000C                            /* Handle of first application specific service when when service changed characteristic is present. */
 #define BLE_HANDLE_MAX                  0xFFFF                            /* Max handle value in BLE. */
 
-#define URL_STRING                      "google.com"
+/* 
+ *  Go to https://goo.gl for utility to shortening URL names.
+ */
+#define URL_STRING                      "goo.gl/jjurOU"
 #define URL_LENGTH                      (sizeof(URL_STRING) - 1)
 
 /*
