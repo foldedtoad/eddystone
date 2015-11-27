@@ -235,7 +235,8 @@ static void build_uid_frame_buffer()
     encoded_advdata[(*len_advdata)++] = 0x03;
     encoded_advdata[(*len_advdata)++] = 0x04;
     encoded_advdata[(*len_advdata)++] = 0x05;
-    encoded_advdata[(*len_advdata)++] = 0x06;
+    encoded_advdata[(*len_advdata)++] = 0x00;  // RFU field must be 0x00
+    encoded_advdata[(*len_advdata)++] = 0x00;  // RFU field must be 0x00
 
     // Length   Service Data. Ibid. § 1.11
     encoded_advdata[0x07] = (*len_advdata) - 8;
