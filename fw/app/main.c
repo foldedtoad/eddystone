@@ -47,6 +47,7 @@
 static edstn_frame_t edstn_frames[3];
 
 static uint32_t adv_cnt = 0;
+static uint32_t sec_cnt = 0;
 
 /* Parameters to be passed to the stack when starting advertising. */
 static ble_gap_adv_params_t m_adv_params;
@@ -99,6 +100,7 @@ static uint32_t battery_adc_config =
 /*---------------------------------------------------------------------------*/
 void assert_nrf_callback(uint16_t line_num, const uint8_t *p_file_name)
 {
+    __BKPT();
     app_error_handler(DEAD_BEEF, line_num, p_file_name);
 }
 
@@ -110,30 +112,8 @@ static uint32_t eddystone_set_adv_data(uint32_t frame_index)
     uint8_t * p_encoded_advdata = edstn_frames[frame_index].adv_frame;
 
     return sd_ble_gap_adv_data_set(p_encoded_advdata, 
-                                   edstn_frames[frame_index].adv_len, 
+                                   edstn_frames[frame_index].adv_len,
                                    NULL, 0);
-}
-
-/*---------------------------------------------------------------------------*/
-/*                                                                           */
-/*---------------------------------------------------------------------------*/
-static uint32_t big32cpy(uint8_t * dest, uint32_t val)
-{
-    dest[3] = (uint8_t) (val >> 0);
-    dest[2] = (uint8_t) (val >> 8);
-    dest[1] = (uint8_t) (val >> 16);
-    dest[0] = (uint8_t) (val >> 24);
-    return 4;
-}
-
-/*---------------------------------------------------------------------------*/
-/*                                                                           */
-/*---------------------------------------------------------------------------*/
-static uint32_t big16cpy(uint8_t * dest, uint16_t val)
-{
-    dest[1] = (uint8_t) (val >> 0);
-    dest[0] = (uint8_t) (val >> 8);
-    return 4;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -165,7 +145,7 @@ static uint16_t battery_level_get(void)
     NRF_ADC->ENABLE = ADC_ENABLE_ENABLE_Enabled;
 
     /* Stop any running conversions. */
-    NRF_ADC->EVENTS_END = 0;    
+    NRF_ADC->EVENTS_END = 0;
 
     /* Start new conversion */
     NRF_ADC->TASKS_START = 1;
@@ -181,7 +161,8 @@ static uint16_t battery_level_get(void)
     return voltage_in_mv;
 
 #else
-    return 0x0000;  /* "not supported" value */s
+    /* Set "not supported" value */
+    return 0x0000;
 #endif
 }
 
@@ -207,8 +188,11 @@ static void build_tlm_frame_buffer()
     eddystone_uint32(encoded_advdata, len_advdata, adv_cnt);
 
     /* Time since power-on or reboot */
-    uint32_t sec_cnt = (adv_cnt / ADVERTISEMENT_INTERVAL);
-    *len_advdata += big32cpy(encoded_advdata + *len_advdata, sec_cnt);
+    eddystone_uint32(encoded_advdata, len_advdata, sec_cnt);
+
+    /* RFU field must be 0x00 */
+    encoded_advdata[(*len_advdata)++] = 0x00;
+    encoded_advdata[(*len_advdata)++] = 0x00;
 
     /* Length   Service Data. Ibid. § 1.11 */
     encoded_advdata[SERVICE_DATA_OFFSET] = (*len_advdata) - 8;
@@ -252,7 +236,7 @@ static void build_uid_frame_buffer()
     memcpy(&encoded_advdata[(*len_advdata)], &namespace, sizeof(namespace));
     *len_advdata += sizeof(namespace);
 
-    /* Set Beacon Id (BID) */
+    /* Set Beacon Id (BID) to FICR Device Address */
     encoded_advdata[(*len_advdata)++] = FICR_DEVICEADDR[5];
     encoded_advdata[(*len_advdata)++] = FICR_DEVICEADDR[4];
     encoded_advdata[(*len_advdata)++] = FICR_DEVICEADDR[3];
@@ -262,7 +246,7 @@ static void build_uid_frame_buffer()
 
     /* RFU field must be 0x00 */
     encoded_advdata[(*len_advdata)++] = 0x00;
-    encoded_advdata[(*len_advdata)++] = 0x00; 
+    encoded_advdata[(*len_advdata)++] = 0x00;
 
     /* Length   Service Data. Ibid. § 1.11 */
     encoded_advdata[SERVICE_DATA_OFFSET] = (*len_advdata) - 8;
@@ -282,11 +266,12 @@ static void advertising_init(void)
     /* Initialize advertising parameters (used when starting advertising). */
     memset(&m_adv_params, 0, sizeof(m_adv_params));
 
-    m_adv_params.type = BLE_GAP_ADV_TYPE_ADV_NONCONN_IND;
-    m_adv_params.p_peer_addr = NULL;           /* Undirected advertisement. */
-    m_adv_params.fp = BLE_GAP_ADV_FP_ANY;
-    m_adv_params.interval = NON_CONNECTABLE_ADV_INTERVAL;
-    m_adv_params.timeout = APP_CFG_NON_CONN_ADV_TIMEOUT;
+    /* Undirected advertisement. */
+    m_adv_params.type        = BLE_GAP_ADV_TYPE_ADV_NONCONN_IND;
+    m_adv_params.p_peer_addr = NULL;
+    m_adv_params.fp          = BLE_GAP_ADV_FP_ANY;
+    m_adv_params.interval    = NON_CONNECTABLE_ADV_INTERVAL;
+    m_adv_params.timeout     = APP_CFG_NON_CONN_ADV_TIMEOUT;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -319,23 +304,29 @@ static void ble_stack_init(void)
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
-static void eddystone_scheduler(bool radio_active)
+static void eddystone_scheduler(bool radio_is_active)
 {
-    if (radio_active == false)
+    static uint32_t iterations = 0;
+
+    if (radio_is_active == false)
         return;
 
-    if (adv_cnt % 9 == 0) {
-        build_tlm_frame_buffer();  // refresh TLM data
-        eddystone_set_adv_data(EDDYSTONE_TLM);
-    }
-    else if (adv_cnt % 5 == 0) {
-        eddystone_set_adv_data(EDDYSTONE_URL);
-    }
-    else if (adv_cnt % 3 == 0) {
-        eddystone_set_adv_data(EDDYSTONE_UID);
-    }
+    iterations++;
+    sec_cnt++;
 
-    adv_cnt++;
+    if ((iterations % 9) == 0) {
+        build_tlm_frame_buffer();
+        eddystone_set_adv_data(EDDYSTONE_TLM);
+        adv_cnt++;
+    }
+    else if ((iterations % 5) == 0) {
+        eddystone_set_adv_data(EDDYSTONE_URL);
+        adv_cnt++;
+    }
+    else if ((iterations % 3) == 0) {
+        eddystone_set_adv_data(EDDYSTONE_UID);
+        adv_cnt++;
+    }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -388,4 +379,3 @@ int main(void)
         power_manage();
     }
 }
-
