@@ -46,7 +46,7 @@
 
 static edstn_frame_t edstn_frames[3];
 
-static uint32_t pdu_count = 0;
+static uint32_t adv_cnt = 0;
 
 /* Parameters to be passed to the stack when starting advertising. */
 static ble_gap_adv_params_t m_adv_params;
@@ -204,10 +204,11 @@ static void build_tlm_frame_buffer()
     eddystone_uint16(encoded_advdata, len_advdata, temperature_data_get());
 
     /* Advertising PDU count */
-    eddystone_uint32(encoded_advdata, len_advdata, pdu_count);
+    eddystone_uint32(encoded_advdata, len_advdata, adv_cnt);
 
     /* Time since power-on or reboot */
-    *len_advdata += big32cpy(encoded_advdata + *len_advdata, pdu_count);
+    uint32_t sec_cnt = (adv_cnt / ADVERTISEMENT_INTERVAL);
+    *len_advdata += big32cpy(encoded_advdata + *len_advdata, sec_cnt);
 
     /* Length   Service Data. Ibid. § 1.11 */
     encoded_advdata[SERVICE_DATA_OFFSET] = (*len_advdata) - 8;
@@ -318,23 +319,23 @@ static void ble_stack_init(void)
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
-static void eddystone_interleave(bool radio_active)
+static void eddystone_scheduler(bool radio_active)
 {
     if (radio_active == false)
         return;
 
-    if (pdu_count % 9 == 0) {
+    if (adv_cnt % 9 == 0) {
         build_tlm_frame_buffer();  // refresh TLM data
         eddystone_set_adv_data(EDDYSTONE_TLM);
     }
-    else if (pdu_count % 5 == 0) {
+    else if (adv_cnt % 5 == 0) {
         eddystone_set_adv_data(EDDYSTONE_URL);
     }
-    else if (pdu_count % 3 == 0) {
+    else if (adv_cnt % 3 == 0) {
         eddystone_set_adv_data(EDDYSTONE_UID);
     }
 
-    pdu_count++;
+    adv_cnt++;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -373,7 +374,7 @@ int main(void)
 
     err_code = ble_radio_notification_init(NRF_APP_PRIORITY_LOW,
                                            NRF_RADIO_NOTIFICATION_DISTANCE_5500US,
-                                           eddystone_interleave);
+                                           eddystone_scheduler);
 
     advertising_init();
 
