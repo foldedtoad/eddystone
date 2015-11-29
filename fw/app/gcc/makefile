@@ -190,6 +190,7 @@ CFLAGS += -D BLE_STACK_SUPPORT_REQD
 CFLAGS += -D S110
 CFLAGS += -D SOFTDEVICE_PRESENT
 CFLAGS += -D $(TARGET_BOARD)
+CFLAGS += -D BSP_SIMPLE
 CFLAGS += -mcpu=cortex-m0
 CFLAGS += -mthumb -mabi=aapcs --std=gnu99
 CFLAGS += -Wall -Werror
