@@ -6,6 +6,9 @@
 
 #include <stdint.h>
 
+#include "app_timer.h"
+#include "app_scheduler.h"
+
 #include "bsp.h"
 
 /* 
@@ -34,6 +37,18 @@
 #define APP_TIMER_PRESCALER             0
 #define APP_TIMER_MAX_TIMERS            (2 + BSP_APP_TIMERS_NUMBER)
 #define APP_TIMER_OP_QUEUE_SIZE         4
+
+/* 
+ *  Maximum size of scheduler events. 
+ *  Note that scheduler BLE stack events do not contain any data, as the 
+ *  events are being pulled from the stack in the event handler.
+ */
+#define SCHED_MAX_EVENT_DATA_SIZE       sizeof(app_timer_event_t)
+
+/* 
+ *  Maximum number of events in the scheduler queue.
+ */
+#define SCHED_QUEUE_SIZE                10
 
 /*
  *  The Beacon's measured RSSI at 1 meter distance in dBm.

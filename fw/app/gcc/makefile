@@ -5,7 +5,6 @@
 TARGET_BOARD         := BOARD_PCA10028
 
 PROVISION_DBGLOG     := "yes"
-PROVISION_DFU        := "yes"
 PROVISION_BATTERY    := "yes"
 
 #------------------------------------------------------------------------------
@@ -29,7 +28,7 @@ export GNU_INSTALL_ROOT
 MAKEFILE_NAME := $(MAKEFILE_LIST)
 MAKEFILE_DIR := $(dir $(MAKEFILE_NAME) ) 
 
-LINKER_SCRIPT := ./gcc_nrf51_s110_$(TARGET_SOC).ld
+
 
 MAKEFILE_NAME := $(MAKEFILE_LIST)
 MAKEFILE_DIR := $(dir $(MAKEFILE_NAME) ) 
@@ -39,6 +38,8 @@ ifeq ($(TARGET_BOARD), BOARD_PCA10028)
 else
   ECHO "invalid TARGET_BOARD"
 endif
+
+LINKER_SCRIPT := ./gcc_nrf51_s110_$(TARGET_SOC)_dfu.ld
 
 ifeq ($(OS),Windows_NT)
   include $(TEMPLATE_PATH)/Makefile.windows
@@ -91,24 +92,13 @@ C_SOURCE_FILES += ../main.c
 C_SOURCE_FILES += ../eddystone.c
 C_SOURCE_FILES += ../printf.c
 C_SOURCE_FILES += ../../bsp/bsp.c
+C_SOURCE_FILES += ../dfu_trigger/ble_dfu.c
+C_SOURCE_FILES += ../dfu_trigger/bootloader_util_gcc.c
+C_SOURCE_FILES += ../dfu_trigger/dfu_app_handler.c
 
 ifeq ($(PROVISION_DBGLOG), "yes")
 	CFLAGS += -D PROVISION_DBGLOG=1
 	C_SOURCE_FILES += ../uart.c
-endif
-
-ifeq ($(PROVISION_DFU), "yes")
-	CFLAGS += -D BLE_DFU_APP_SUPPORT
-
-	C_SOURCE_FILES += ../dfu_trigger/ble_dfu.c
-	C_SOURCE_FILES += ../dfu_trigger/bootloader_util_gcc.c
-	C_SOURCE_FILES += ../dfu_trigger/dfu_app_handler.c
-
-	INC_PATHS += -I../dfu_trigger
-
-	LINKER_SCRIPT = ./gcc_nrf51_s110_xxac_dfu.ld
-else
-	LINKER_SCRIPT = ./gcc_nrf51_s110_xxac.ld
 endif
 
 ifeq ($(PROVISION_BATTERY), "yes")
@@ -119,6 +109,8 @@ C_SOURCE_FILES += $(COMPONENTS)/libraries/button/app_button.c
 C_SOURCE_FILES += $(COMPONENTS)/libraries/util/app_error.c
 C_SOURCE_FILES += $(COMPONENTS)/libraries/fifo/app_fifo.c
 C_SOURCE_FILES += $(COMPONENTS)/libraries/timer/app_timer.c
+C_SOURCE_FILES += $(COMPONENTS)/libraries/timer/app_timer_appsh.c
+C_SOURCE_FILES += $(COMPONENTS)/libraries/scheduler/app_scheduler.c
 C_SOURCE_FILES += $(COMPONENTS)/libraries/util/nrf_assert.c
 C_SOURCE_FILES += $(COMPONENTS)/drivers_nrf/uart/app_uart_fifo.c
 C_SOURCE_FILES += $(COMPONENTS)/drivers_nrf/hal/nrf_delay.c
@@ -137,6 +129,7 @@ ASM_SOURCE_FILES += $(COMPONENTS)/toolchain/gcc/gcc_startup_nrf51.s
 
 # includes common to all targets
 INC_PATHS += -I../
+INC_PATHS += -I../dfu_trigger
 INC_PATHS += -I../../bsp/
 INC_PATHS += -I$(COMPONENTS)/drivers_nrf/config
 INC_PATHS += -I$(COMPONENTS)/libraries/util
@@ -147,7 +140,6 @@ INC_PATHS += -I$(COMPONENTS)/ble/ble_radio_notification
 INC_PATHS += -I$(COMPONENTS)/drivers_nrf/common
 INC_PATHS += -I$(COMPONENTS)/softdevice/s110/headers
 INC_PATHS += -I$(COMPONENTS)/libraries/fifo
-
 INC_PATHS += -I$(COMPONENTS)/drivers_nrf/hal
 INC_PATHS += -I$(COMPONENTS)/drivers_nrf/pstorage
 INC_PATHS += -I$(COMPONENTS)/libraries/trace
@@ -157,6 +149,8 @@ INC_PATHS += -I$(COMPONENTS)/toolchain
 INC_PATHS += -I$(COMPONENTS)/device
 INC_PATHS += -I$(COMPONENTS)/softdevice/common/softdevice_handler
 INC_PATHS += -I$(COMPONENTS)/libraries/timer
+INC_PATHS += -I$(COMPONENTS)/libraries/app_timer_appsh.h
+INC_PATHS += -I$(COMPONENTS)/libraries/scheduler
 INC_PATHS += -I$(COMPONENTS)/drivers_nrf/hal
 INC_PATHS += -I$(COMPONENTS)/libraries/button
 INC_PATHS += -I$(COMPONENTS)/ble/device_manager
@@ -191,6 +185,7 @@ CFLAGS += -D S110
 CFLAGS += -D SOFTDEVICE_PRESENT
 CFLAGS += -D $(TARGET_BOARD)
 CFLAGS += -D BSP_SIMPLE
+CFLAGS += -D BLE_DFU_APP_SUPPORT
 CFLAGS += -mcpu=cortex-m0
 CFLAGS += -mthumb -mabi=aapcs --std=gnu99
 CFLAGS += -Wall -Werror
@@ -250,7 +245,6 @@ all: $(BUILD_DIRECTORIES) $(OBJECTS)
 	@echo "build SOC:     $(TARGET_SOC)"
 	@echo "build options  --"
 	@echo "               PROVISION_DBGLOG   $(PROVISION_DBGLOG)"
-	@echo "               PROVISION_DFU      $(PROVISION_DFU)"
 	@echo "               PROVISION_BATTERY  $(PROVISION_BATTERY)"
 	@echo "build products --"
 	@echo "               $(OUTPUT_NAME).elf"
@@ -288,6 +282,7 @@ $(OBJECT_DIRECTORY)/%.o: %.s
 # Link
 $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_NAME).elf: $(BUILD_DIRECTORIES) $(OBJECTS)
 	@echo Linking target: $(OUTPUT_NAME).elf
+	@echo LINKER_SCRIPT: $(LINKER_SCRIPT)
 	$(NO_ECHO)$(CC) $(LDFLAGS) $(OBJECTS) $(LIBS) -o $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_NAME).elf
 
 # Create binary .bin file from the .elf file

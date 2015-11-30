@@ -1,21 +1,26 @@
-//
-// Created by Alex Van Boxel on 09/08/15.
-// Modified by Robin Callender on 11/25/15.
-//
+/*---------------------------------------------------------------------------*/
+/*  Copyright (c) 2015 Robin Callender. All Rights Reserved.                 */
+/*---------------------------------------------------------------------------*/
 #include <stdbool.h>
 #include <stdint.h>
 #include <ble_advdata.h>
 
 #include "nrf51.h"
 #include "nrf_soc.h"
+#include "ble.h"
+#include "ble_hci.h"
 #include "ble_radio_notification.h"
 #include "softdevice_handler.h"
 #include "bsp.h"
 #include "app_timer.h"
+#include "app_timer_appsh.h"
+#include "app_scheduler.h"
 
 #include "config.h"
 #include "eddystone.h"
 #include "dbglog.h"
+#include "ble_dfu.h"
+#include "dfu_app_handler.h"
 
 #if defined(PROVISION_DBGLOG)
   #include "uart.h"
@@ -43,6 +48,10 @@
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
+
+static uint16_t   m_conn_handle = BLE_CONN_HANDLE_INVALID;
+
+static ble_dfu_t  m_dfus;
 
 static edstn_frame_t edstn_frames[3];
 
@@ -330,6 +339,99 @@ static void eddystone_scheduler(bool radio_is_active)
 }
 
 /*---------------------------------------------------------------------------*/
+/*  On confirm of Service Changed, start bootloader.                         */
+/*---------------------------------------------------------------------------*/
+static void service_changed_evt(ble_evt_t * p_ble_evt)
+{
+    if (p_ble_evt->header.evt_id == BLE_GATTS_EVT_SC_CONFIRM) {
+
+        PUTS("Service Changed confirmed");
+
+        /* Starting the bootloader - will cause reset. */
+        bootloader_start(m_conn_handle);
+    }
+}
+/*---------------------------------------------------------------------------*/
+/*  DFU BLE Reset Prepare                                                    */
+/*---------------------------------------------------------------------------*/
+static void reset_prepare(void)
+{
+    PUTS(__func__);
+
+    if (m_conn_handle != BLE_CONN_HANDLE_INVALID) {
+        /* Disconnect from peer. */
+        uint8_t status = BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION;
+
+        APP_ERROR_CHECK( sd_ble_gap_disconnect(m_conn_handle, status) );
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+/*  Initializing the DFU Service.                                            */
+/*---------------------------------------------------------------------------*/
+static void dfu_init(void)
+{
+    ble_dfu_init_t   dfus_init;
+
+    /* Initialize the Device Firmware Update Service. */
+    memset(&dfus_init, 0, sizeof(dfus_init));
+
+    dfus_init.evt_handler   = dfu_app_on_dfu_evt;
+    dfus_init.error_handler = NULL;
+
+    APP_ERROR_CHECK( ble_dfu_init(&m_dfus, &dfus_init) );
+
+    dfu_app_reset_prepare_set(reset_prepare);
+}
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
+static void services_init(void)
+{    
+    dfu_init();
+}
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
+static void timer_init(void)
+{
+    uint32_t err_code;
+
+    APP_TIMER_INIT(APP_TIMER_PRESCALER,
+                   APP_TIMER_MAX_TIMERS,
+                   APP_TIMER_OP_QUEUE_SIZE,
+                   false);
+
+    err_code = bsp_init(BSP_INIT_LED,
+                        APP_TIMER_TICKS(100, APP_TIMER_PRESCALER),
+                        NULL);
+    APP_ERROR_CHECK(err_code);
+}
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
+static void radio_init(void)
+{
+    uint32_t err_code;
+
+    err_code = ble_radio_notification_init(NRF_APP_PRIORITY_LOW,
+                                           NRF_RADIO_NOTIFICATION_DISTANCE_5500US,
+                                           eddystone_scheduler);
+    APP_ERROR_CHECK(err_code);
+}
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
+static void scheduler_init(void)
+{
+    APP_SCHED_INIT(SCHED_MAX_EVENT_DATA_SIZE, SCHED_QUEUE_SIZE);
+}
+
+/*---------------------------------------------------------------------------*/
 /*  Function for doing power management.                                     */
 /*---------------------------------------------------------------------------*/
 static void power_manage(void)
@@ -342,20 +444,9 @@ static void power_manage(void)
 /*---------------------------------------------------------------------------*/
 int main(void)
 {
-    uint32_t err_code;
-
     /* Initialize. */
-    APP_TIMER_INIT(APP_TIMER_PRESCALER,
-                   APP_TIMER_MAX_TIMERS,
-                   APP_TIMER_OP_QUEUE_SIZE,
-                   false);
-
-    err_code = bsp_init(BSP_INIT_LED,
-                        APP_TIMER_TICKS(100, APP_TIMER_PRESCALER),
-                        NULL);
-    APP_ERROR_CHECK(err_code);
-
     ble_stack_init();
+    scheduler_init();
 
 #if defined(PROVISION_DBGLOG)
     uart_init();
@@ -363,19 +454,17 @@ int main(void)
 
     PRINTF("\n*** Eddystone: %s %s ***\n\n", __DATE__, __TIME__);
 
-    err_code = ble_radio_notification_init(NRF_APP_PRIORITY_LOW,
-                                           NRF_RADIO_NOTIFICATION_DISTANCE_5500US,
-                                           eddystone_scheduler);
+    timer_init();
+    radio_init();
 
     advertising_init();
-
-    APP_ERROR_CHECK(err_code);
 
     /* Start execution. */
     advertising_start();
 
     /* Enter main loop. */
     for (;;) {
+        app_sched_execute();
         power_manage();
     }
 }
