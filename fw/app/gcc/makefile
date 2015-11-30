@@ -89,6 +89,7 @@ remduplicates = $(strip $(if $1,$(firstword $1) $(call remduplicates,$(filter-ou
 # source common to all targets
 
 C_SOURCE_FILES += ../main.c
+C_SOURCE_FILES += ../connect.c
 C_SOURCE_FILES += ../eddystone.c
 C_SOURCE_FILES += ../printf.c
 C_SOURCE_FILES += ../../bsp/bsp.c
@@ -111,6 +112,7 @@ C_SOURCE_FILES += $(COMPONENTS)/libraries/fifo/app_fifo.c
 C_SOURCE_FILES += $(COMPONENTS)/libraries/timer/app_timer.c
 C_SOURCE_FILES += $(COMPONENTS)/libraries/timer/app_timer_appsh.c
 C_SOURCE_FILES += $(COMPONENTS)/libraries/scheduler/app_scheduler.c
+C_SOURCE_FILES += $(COMPONENTS)/drivers_nrf/pstorage/pstorage.c
 C_SOURCE_FILES += $(COMPONENTS)/libraries/util/nrf_assert.c
 C_SOURCE_FILES += $(COMPONENTS)/drivers_nrf/uart/app_uart_fifo.c
 C_SOURCE_FILES += $(COMPONENTS)/drivers_nrf/hal/nrf_delay.c
@@ -138,12 +140,13 @@ INC_PATHS += -I$(COMPONENTS)/drivers_nrf/uart
 INC_PATHS += -I$(COMPONENTS)/ble/common
 INC_PATHS += -I$(COMPONENTS)/ble/ble_radio_notification
 INC_PATHS += -I$(COMPONENTS)/drivers_nrf/common
+INC_PATHS += -I$(COMPONENTS)/drivers_nrf/pstorage
+INC_PATHS += -I$(COMPONENTS)/drivers_nrf/pstorage/config
 INC_PATHS += -I$(COMPONENTS)/softdevice/s110/headers
 INC_PATHS += -I$(COMPONENTS)/libraries/fifo
 INC_PATHS += -I$(COMPONENTS)/drivers_nrf/hal
 INC_PATHS += -I$(COMPONENTS)/drivers_nrf/pstorage
 INC_PATHS += -I$(COMPONENTS)/libraries/trace
-
 INC_PATHS += -I$(COMPONENTS)/libraries/gpiote
 INC_PATHS += -I$(COMPONENTS)/toolchain
 INC_PATHS += -I$(COMPONENTS)/device
