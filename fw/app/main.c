@@ -99,6 +99,63 @@ static uint32_t battery_adc_config =
             ADC_PRE_SCALING_COMPENSATION)
 
 
+#if defined(PROVISION_DBGLOG)
+static const struct {
+    uint16_t  error_code;
+    char    * text;
+} nrf_errors [] = {
+    { NRF_ERROR_SVC_HANDLER_MISSING,    "SVC_HANDLER_MISSING" },
+    { NRF_ERROR_SOFTDEVICE_NOT_ENABLED, "SD_NOT_ENABLED"      },
+    { NRF_ERROR_INTERNAL,               "INTERNAL"            },
+    { NRF_ERROR_NO_MEM,                 "NO_MEM"              },
+    { NRF_ERROR_NOT_FOUND,              "NOT_FOUND"           },
+    { NRF_ERROR_NOT_SUPPORTED,          "NOT_SUPPORTED"       },
+    { NRF_ERROR_INVALID_PARAM,          "INVALID_PARAMETER"   },
+    { NRF_ERROR_INVALID_STATE,          "INVALID_STATE"       },
+    { NRF_ERROR_INVALID_LENGTH,         "INVALID_LENGTH"      },
+    { NRF_ERROR_INVALID_FLAGS,          "INVALID_FLAGS"       },
+    { NRF_ERROR_INVALID_DATA,           "INVALID_DATA"        },
+    { NRF_ERROR_DATA_SIZE,              "DATA_SIZE"           },
+    { NRF_ERROR_TIMEOUT,                "TIMEOUT"             },
+    { NRF_ERROR_NULL,                   "NULL"                },
+    { NRF_ERROR_FORBIDDEN,              "FORBIDDEN"           },
+    { NRF_ERROR_INVALID_ADDR,           "INVALID_ADDR"        },
+    { NRF_ERROR_BUSY,                   "BUSY"                },
+};
+#define NRF_ERRORS_COUNT (sizeof(nrf_errors)/sizeof(nrf_errors[0]))
+#endif
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
+void app_error_handler(uint32_t error_code, uint32_t line_num, const uint8_t * p_file_name)
+{
+#if defined(PROVISION_DBGLOG)
+    char * text = "??";
+    (void) text;
+
+    for (int i=0; i < NRF_ERRORS_COUNT; i++) {
+        if (error_code == nrf_errors[i].error_code) {
+            text = nrf_errors[i].text;
+            break;
+        }
+    }
+    PRINTF("%s: NRF_ERROR_%s 0x%x, at %s(%d)\n", __func__, text, 
+           (unsigned)error_code, (char*)p_file_name, (int)line_num);
+
+#endif
+
+#if defined(DEBUG)
+    __disable_irq();
+    __BKPT(0);
+    while (1) { /* spin */}
+
+#else
+    // On assert, the system can only recover with a reset.   
+    NVIC_SystemReset();
+#endif
+}
+
 /*---------------------------------------------------------------------------*/
 /*  Callback function for asserts in the SoftDevice.                         */
 /*---------------------------------------------------------------------------*/
@@ -286,6 +343,8 @@ static void advertising_start(void)
     APP_ERROR_CHECK( sd_ble_gap_adv_start(&m_adv_params) );
 
     APP_ERROR_CHECK( bsp_indication_set(BSP_INDICATE_ADVERTISING) );
+
+    PUTS(__func__);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -408,6 +467,7 @@ int main(void)
     timer_init();
     radio_init();
 
+    /* Configure connection-side for DFU support */
     gap_params_init();
     services_init();
     advertising_init();

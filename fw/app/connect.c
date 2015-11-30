@@ -51,6 +51,8 @@ static void app_context_load(dm_handle_t const * p_handle)
     static uint32_t          context_data;
     dm_application_context_t context;
 
+    PUTS(__func__);
+
     context.len    = sizeof(context_data);
     context.p_data = (uint8_t *)&context_data;
 
@@ -91,6 +93,8 @@ static uint32_t device_manager_evt_handler(dm_handle_t const * p_handle,
                                            dm_event_t const  * p_event,
                                            uint32_t            event_result)
 {
+    PUTS(__func__);
+
     APP_ERROR_CHECK(event_result);
 
     switch (p_event->event_id) {
@@ -195,6 +199,8 @@ uint32_t service_changed_indicate(void)
 /*---------------------------------------------------------------------------*/
 static void on_conn_params_evt(ble_conn_params_evt_t * p_evt)
 {
+    PUTS(__func__);
+
     if (p_evt->evt_type == BLE_CONN_PARAMS_EVT_FAILED) {
 
         uint32_t err_code;
@@ -210,6 +216,8 @@ static void on_conn_params_evt(ble_conn_params_evt_t * p_evt)
 /*---------------------------------------------------------------------------*/
 static void conn_params_error_handler(uint32_t error)
 {
+    PUTS(__func__);
+
     APP_ERROR_HANDLER( error );
 }
 
@@ -312,7 +320,9 @@ void services_init(void)
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
 void storage_init(void)
-{    
+{   
+    PUTS(__func__);
+
     APP_ERROR_CHECK( pstorage_init() );
 }
 
@@ -413,6 +423,8 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
 /*---------------------------------------------------------------------------*/
 void ble_evt_dispatch(ble_evt_t * p_ble_evt)
 {
+    PUTS(__func__);
+
     ble_conn_params_on_ble_evt(p_ble_evt);
 
     dm_ble_evt_handler(p_ble_evt);
@@ -429,6 +441,8 @@ void ble_evt_dispatch(ble_evt_t * p_ble_evt)
 /*---------------------------------------------------------------------------*/
 static void on_sys_evt(uint32_t sys_evt)
 {
+    PRINTF("%s: %u\n", __func__, (unsigned) sys_evt);
+
     switch (sys_evt) {
 
         case NRF_EVT_FLASH_OPERATION_SUCCESS:
