@@ -321,8 +321,6 @@ void services_init(void)
 /*---------------------------------------------------------------------------*/
 void storage_init(void)
 {   
-    PUTS(__func__);
-
     APP_ERROR_CHECK( pstorage_init() );
 }
 

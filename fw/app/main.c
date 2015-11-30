@@ -19,6 +19,7 @@
 #include "eddystone.h"
 #include "dbglog.h"
 #include "ble_dfu.h"
+#include "ble_gap.h"
 #include "dfu_app_handler.h"
 
 #if defined(PROVISION_DBGLOG)
@@ -327,12 +328,22 @@ static void advertising_init(void)
     /* Initialize advertising parameters (used when starting advertising). */
     memset(&m_adv_params, 0, sizeof(m_adv_params));
 
-    /* Undirected advertisement. */
+#if 0  
+    /* Undirected advertisement with non-connectability. */
     m_adv_params.type        = BLE_GAP_ADV_TYPE_ADV_NONCONN_IND;
     m_adv_params.p_peer_addr = NULL;
     m_adv_params.fp          = BLE_GAP_ADV_FP_ANY;
-    m_adv_params.interval    = NON_CONNECTABLE_ADV_INTERVAL;
-    m_adv_params.timeout     = APP_CFG_NON_CONN_ADV_TIMEOUT;
+    m_adv_params.interval    = APP_ADV_INTERVAL;
+    m_adv_params.timeout     = APP_ADV_TIMEOUT;
+#else
+    /* Advertisement with connectability */
+    m_adv_params.type        = BLE_GAP_ADV_TYPE_ADV_IND;
+    m_adv_params.p_peer_addr = NULL;
+    m_adv_params.fp          = BLE_GAP_ADV_FP_ANY;
+    m_adv_params.interval    = APP_ADV_INTERVAL;
+    m_adv_params.timeout     = APP_ADV_TIMEOUT;
+#endif
+
 }
 
 /*---------------------------------------------------------------------------*/

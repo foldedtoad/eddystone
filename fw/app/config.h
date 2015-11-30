@@ -8,7 +8,6 @@
 
 #include "app_timer.h"
 #include "app_scheduler.h"
-
 #include "bsp.h"
 
 /* 
@@ -17,13 +16,6 @@
  *  the lifetime of the device
  */
 #define IS_SRVC_CHANGED_CHARACT_PRESENT 1
-
-/* 
- *  Time for which the device must be advertising in 
- *  non-connectable mode (in seconds). 
- *  A value of 0 disables timeout. 
- */
-#define APP_CFG_NON_CONN_ADV_TIMEOUT    0
 
 /*
  *  GAP parameters
@@ -65,11 +57,13 @@
  *  The advertising interval for advertisement (100 ms).
  *  This value can vary between 100ms to 10.24s). 
  */
-#define ADVERTISEMENT_INTERVAL          100
-#define NON_CONNECTABLE_ADV_INTERVAL    MSEC_TO_UNITS(ADVERTISEMENT_INTERVAL, UNIT_0_625_MS)
+#define APP_ADV_TIMEOUT                 0
+#define APP_ADV_INTERVAL_MS             100
+#define APP_ADV_INTERVAL                MSEC_TO_UNITS(APP_ADV_INTERVAL_MS, UNIT_0_625_MS)
 
-#define DEAD_BEEF                       0xDEADBEEF 
-
+/*
+ *  Timer parameters
+ */
 #define APP_TIMER_PRESCALER             0
 #define APP_TIMER_MAX_TIMERS            (2 + BSP_APP_TIMERS_NUMBER)
 #define APP_TIMER_OP_QUEUE_SIZE         4
@@ -119,5 +113,10 @@
  *  8C257BA1B6C01043EEA4                  Namespace
  */
 #define UID_NAMESPACE                   {0x8C,0x25,0x7B,0xA1,0xB6,0xC0,0x10,0x43,0xEE,0xA4}
+
+/*
+ *  Misc values
+ */
+#define DEAD_BEEF                       0xDEADBEEF 
 
 #endif /* _CONFIG_H__ */
