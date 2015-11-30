@@ -7,10 +7,7 @@
 
 #include "nrf51.h"
 #include "nrf_soc.h"
-//#include "ble.h"
-//#include "ble_hci.h"
 #include "ble_radio_notification.h"
-//#include "ble_conn_params.h"
 #include "softdevice_handler.h"
 #include "bsp.h"
 #include "app_timer.h"
@@ -292,23 +289,6 @@ static void advertising_start(void)
 }
 
 /*---------------------------------------------------------------------------*/
-/*  Function for initializing the BLE stack.                                 */
-/*---------------------------------------------------------------------------*/
-static void ble_stack_init(void)
-{
-    /* Initialize the SoftDevice handler module. */
-    SOFTDEVICE_HANDLER_INIT(NRF_CLOCK_LFCLKSRC_XTAL_20_PPM, NULL);
-
-    /* Enable BLE stack */ 
-    ble_enable_params_t ble_enable_params;
-    memset(&ble_enable_params, 0, sizeof(ble_enable_params));
-
-    ble_enable_params.gatts_enable_params.service_changed = IS_SRVC_CHANGED_CHARACT_PRESENT;
-
-    APP_ERROR_CHECK( sd_ble_enable(&ble_enable_params) );
-}
-
-/*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
 static void eddystone_scheduler(bool radio_is_active)
@@ -336,6 +316,31 @@ static void eddystone_scheduler(bool radio_is_active)
     }
 }
 
+/*---------------------------------------------------------------------------*/
+/*  Function for initializing the BLE stack.                                 */
+/*---------------------------------------------------------------------------*/
+static void ble_stack_init(void)
+{
+    ble_gap_addr_t      addr;
+    ble_enable_params_t ble_enable_params;
+
+    /* Initialize the SoftDevice handler module. */
+    SOFTDEVICE_HANDLER_INIT(NRF_CLOCK_LFCLKSRC_XTAL_20_PPM, false);
+
+    /* Enable BLE stack */ 
+    memset(&ble_enable_params, 0, sizeof(ble_enable_params));
+    ble_enable_params.gatts_enable_params.service_changed = IS_SRVC_CHANGED_CHARACT_PRESENT;
+    APP_ERROR_CHECK( sd_ble_enable(&ble_enable_params) );
+
+    sd_ble_gap_address_get(&addr);
+    sd_ble_gap_address_set(BLE_GAP_ADDR_CYCLE_MODE_NONE, &addr);
+
+    /* Subscribe for BLE events. */
+    APP_ERROR_CHECK( softdevice_ble_evt_handler_set(ble_evt_dispatch) );
+
+    /* Register with the SoftDevice handler module for BLE events. */
+    APP_ERROR_CHECK( softdevice_sys_evt_handler_set(sys_evt_dispatch) );
+}
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */

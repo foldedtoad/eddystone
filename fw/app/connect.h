@@ -20,6 +20,9 @@ void conn_params_init(void);
 void sec_params_init(void);
 void device_manager_init(void);
 
+void ble_evt_dispatch(ble_evt_t * p_ble_evt);
+void sys_evt_dispatch(uint32_t sys_evt);
+
 uint32_t service_changed_indicate(void);
 
 #endif  /* _CONNECT_H_ */

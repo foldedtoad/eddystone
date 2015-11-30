@@ -92,6 +92,7 @@ C_SOURCE_FILES += ../main.c
 C_SOURCE_FILES += ../connect.c
 C_SOURCE_FILES += ../eddystone.c
 C_SOURCE_FILES += ../printf.c
+C_SOURCE_FILES += ../hard_fault_handler.c
 C_SOURCE_FILES += ../../bsp/bsp.c
 C_SOURCE_FILES += ../dfu_trigger/ble_dfu.c
 C_SOURCE_FILES += ../dfu_trigger/bootloader_util_gcc.c

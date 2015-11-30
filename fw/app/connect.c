@@ -39,6 +39,9 @@ static dm_application_instance_t m_app_handle;
 /* Security requirements for this application. */
 static ble_gap_sec_params_t      m_sec_params;              
 
+/* Flag to keep track of ongoing operations on persistent memory. */
+static bool  m_memory_access_in_progress = false;
+
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
@@ -311,4 +314,143 @@ void services_init(void)
 void storage_init(void)
 {    
     APP_ERROR_CHECK( pstorage_init() );
+}
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
+static void on_ble_evt(ble_evt_t * p_ble_evt)
+{
+    uint32_t err_code;
+
+    static ble_gap_evt_auth_status_t m_auth_status;
+    static ble_gap_enc_key_t         m_enc_key;
+    static ble_gap_id_key_t          m_id_key;
+    static ble_gap_sign_info_t       m_sign_key;
+    static ble_gap_sec_keyset_t      m_keys = {
+            .keys_periph = {&m_enc_key, &m_id_key, &m_sign_key}
+    };
+
+    switch (p_ble_evt->header.evt_id) {
+
+        case BLE_GAP_EVT_CONNECTED:
+            PUTS("on_ble_evt: CONNECTED");
+            m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
+            break;
+
+        case BLE_GAP_EVT_DISCONNECTED:
+            PUTS("on_ble_evt: DISCONNECTED");
+            m_conn_handle = BLE_CONN_HANDLE_INVALID;
+            break;
+
+        case BLE_GAP_EVT_SEC_PARAMS_REQUEST:
+            err_code = sd_ble_gap_sec_params_reply(m_conn_handle,
+                                                   BLE_GAP_SEC_STATUS_SUCCESS,
+                                                   &m_sec_params,
+                                                   &m_keys);
+            APP_ERROR_CHECK(err_code);
+            break;
+
+        case BLE_GATTS_EVT_SYS_ATTR_MISSING:
+            {
+                uint32_t flags = BLE_GATTS_SYS_ATTR_FLAG_SYS_SRVCS | 
+                                 BLE_GATTS_SYS_ATTR_FLAG_USR_SRVCS;
+
+                err_code = sd_ble_gatts_sys_attr_set(m_conn_handle, NULL, 0, flags);
+                APP_ERROR_CHECK(err_code);
+            }
+            break;
+
+        case BLE_GAP_EVT_AUTH_STATUS:
+            m_auth_status = p_ble_evt->evt.gap_evt.params.auth_status;
+            break;
+
+        case BLE_GAP_EVT_SEC_INFO_REQUEST:
+          {
+            bool                    master_id_matches;
+            ble_gap_sec_kdist_t *   p_distributed_keys;
+            ble_gap_enc_info_t *    p_enc_info;
+            ble_gap_irk_t *         p_id_info;
+            ble_gap_sign_info_t *   p_sign_info;
+
+            master_id_matches  = memcmp(&p_ble_evt->evt.gap_evt.params.sec_info_request.master_id,
+                                        &m_enc_key.master_id,
+                                        sizeof(ble_gap_master_id_t)) == 0;
+
+            p_distributed_keys = &m_auth_status.kdist_periph;
+
+            p_enc_info  = (p_distributed_keys->enc  && master_id_matches) ? &m_enc_key.enc_info : NULL;
+            p_id_info   = (p_distributed_keys->id   && master_id_matches) ? &m_id_key.id_info   : NULL;
+            p_sign_info = (p_distributed_keys->sign && master_id_matches) ? &m_sign_key         : NULL;
+
+            err_code = sd_ble_gap_sec_info_reply(m_conn_handle,
+                                                 p_enc_info,
+                                                 p_id_info, p_sign_info);
+            APP_ERROR_CHECK(err_code);
+            break;
+          }
+
+        case BLE_GAP_EVT_TIMEOUT:
+            if (p_ble_evt->evt.gap_evt.params.timeout.src == BLE_GAP_TIMEOUT_SRC_ADVERTISING) {
+
+                /* Go to system-off mode */
+                PUTS("system power off");
+                APP_ERROR_CHECK( sd_power_system_off() );
+            }
+            break;
+
+        case BLE_EVT_TX_COMPLETE:
+            break;
+
+        default:
+            /* No implementation needed. */
+            break;
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
+void ble_evt_dispatch(ble_evt_t * p_ble_evt)
+{
+    ble_conn_params_on_ble_evt(p_ble_evt);
+
+    dm_ble_evt_handler(p_ble_evt);
+
+    service_changed_evt(p_ble_evt);
+
+    ble_dfu_on_ble_evt(&m_dfus, p_ble_evt);
+
+    on_ble_evt(p_ble_evt);
+}
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
+static void on_sys_evt(uint32_t sys_evt)
+{
+    switch (sys_evt) {
+
+        case NRF_EVT_FLASH_OPERATION_SUCCESS:
+        case NRF_EVT_FLASH_OPERATION_ERROR:
+            if (m_memory_access_in_progress) {
+                m_memory_access_in_progress = false;
+                // TBD
+            }
+            break;
+
+        default:
+            // No implementation needed.
+            break;
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
+void sys_evt_dispatch(uint32_t sys_evt)
+{
+    pstorage_sys_event_handler(sys_evt);
+
+    on_sys_evt(sys_evt);
 }
