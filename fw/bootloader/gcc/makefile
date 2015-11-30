@@ -114,6 +114,7 @@ ASM_SOURCE_FILES  += $(COMPONENTS)/toolchain/gcc/gcc_startup_nrf51.s
 INC_PATHS += -I../
 INC_PATHS += -I../simple_uart
 INC_PATHS += -I../bootloader_dfu
+INC_PATHS += -I../../bsp/
 
 INC_PATHS += -I$(COMPONENTS)/ble/common
 INC_PATHS += -I$(COMPONENTS)/ble/ble_error_log
