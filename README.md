@@ -48,14 +48,17 @@ Please read the README.md and EXAMPLE.md files under the ./fw/builder directory.
 Enter the component directory you wish to build: app or firmware.
 Within this directory there is a subdirectory "gcc"; enter it.
 This gcc directory will be where you run the makefile.
-The makefile supports two build types: debug and release, which release being the default.
-The example below will generate a debug version of the firmware.
+The makefile supports two build types: debug and release, which release being the default. Examples are given below.
 
 ```
   $ make clean  
   $ make debug  
 ```
-
+or  
+```
+  $ make clean  
+  $ make   
+```  
 
 
 
