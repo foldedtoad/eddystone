@@ -60,6 +60,10 @@ or
   $ make   
 ```  
 
+##OTA-DFU support
+This project incorporates OTA-DFU support (Over-The-Air Device-Firmware-Update).
+See the HOWTO_DFU.md file under the ./fw/app directory for details.
+
 
 
 
