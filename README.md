@@ -43,12 +43,18 @@ This project is arranged to expect to be placed (cloned) into the Nordic nRF51 S
 Below is an example of the output from the "builder" make process.  
 This builds a "unified" firmware hexfile, which consolidates the softdevice, appplication, and bootloader components into a single hexfile image.  
 
+```
+  $ make clean  
+  $ make debug  
+```  
+  
 The final product of the "builder" is a versioned hexfile: unified_debug_1449000685.hex in example below. Note that the hexfile has a standard unix-type timestamp, in this example "1449000685", which encodes the build time.
 
 This unified hexfile can then be flashed onto the device in a single operation. This is often needed for high-volume, production manufacturability.  It is also useful for just getting all the firmware parts initially onto the PCA10028 device.  
 
 ```
 knots:nrf51_sdk_v8 robin$ cd eddystone/fw/builder
+
 knots:builder robin$ make clean
 make -C ../app/gcc  -f makefile clean
 rm -rf _build
@@ -56,6 +62,7 @@ make -C ../bootloader/gcc -f makefile clean
 rm -rf _build
 rm -f ./_build/*.hex
 rm -f ./_build/*.jlink
+
 knots:builder robin$ make debug
 make -C ../app/gcc -f makefile debug
 echo  makefile
@@ -211,7 +218,9 @@ knots:builder robin$
 After you use the "builder" to create the unified hexfile image, you then flash it onto the PCA10028 device.
 From the same directory, just enter
 
-  > make flash
+```
+  $ make flash
+```  
   
 And, if your JLink utilities are install properly, the makefile script will flash the unified hexfile onto the device.  
 Below is an example of this procedure.  
