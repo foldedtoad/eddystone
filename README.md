@@ -11,10 +11,13 @@ Once the Bootloader is in control, it will advertise itself as "DfuTarg".  You m
 ##Building the Firmware  
 
 ###Requirements  
+It is assumed that you are able to build the Nordic SDK examples at this point.  
+Additional requirement are --
+
 * Recent version of GCC toolchain.
 * Python 2.7 (2.6 may be ok).
 * intelhex which includes hexmerge: "sudo pip install intelhex".
-* Segger JLink utilities -- should be part of Nordic's nRFgo-Studio install.
+* Segger JLink utilities: version V4.98e or later (slighly earlier versions may work too).
 
 ###Project Placement  
 This project is arranged to expect to be placed (cloned) into the Nordic nRF51 SDK folder on a peer level with the "component", "example", etc. subfolders.
@@ -36,10 +39,14 @@ This project is arranged to expect to be placed (cloned) into the Nordic nRF51 S
 ```
 
 
-**Builder Example**  
+**"Builder" Example**  
 Below is an example of the output from the "builder" make process.  
-This builds a "unified" firmware hex file, which consolidates the softdevice, appplication, and bootloader components into a single hex file image. This one unified hexfile can them be flashed onto the device in a single operation. This is often needed for high-volume, production manufacturability.  It is also usefull for just getting all the firmware parts initially onto the PCA10028 device.
-  
+This builds a "unified" firmware hexfile, which consolidates the softdevice, appplication, and bootloader components into a single hexfile image.  
+
+The final product of the "builder" is a versioned hexfile: unified_debug_1449000685.hex in example below.
+
+This single unified hexfile can then be flashed onto the device in a single operation. This is often needed for high-volume, production manufacturability.  It is also usefull for just getting all the firmware parts initially onto the PCA10028 device.  
+
 ```
 knots:nrf51_sdk_v8 robin$ cd eddystone/fw/builder
 knots:builder robin$ make clean
