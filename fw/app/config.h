@@ -1,6 +1,8 @@
-/* 
- *  Copyright (c) 2015 Robin Callender. All Rights Reserved.
- */
+/*---------------------------------------------------------------------------*/
+/*  config.h                                                                 */
+/*  Copyright (c) 2015 Robin Callender. All Rights Reserved.                 */
+/*---------------------------------------------------------------------------*/
+
 #ifndef _CONFIG_H__
 #define _CONFIG_H__
 

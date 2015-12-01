@@ -7,10 +7,7 @@
 
 #include <stdint.h>
 
-//void advertising_init(void);
-//void advertising_start(void);
 void advertising_start_connectable(void);
 void advertising_start_nonconnectable(void);
-//void advertising_set_type(uint8_t advert_type);
 
 #endif  /* _ADVERT_H_ */
