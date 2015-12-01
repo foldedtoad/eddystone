@@ -247,7 +247,6 @@ all: $(BUILD_DIRECTORIES) $(OBJECTS)
 	@echo "build SOC:     $(TARGET_SOC)"
 	@echo "build options  --"
 	@echo "               PROVISION_DBGLOG   $(PROVISION_DBGLOG)"
-	@echo "               PROVISION_BATTERY  $(PROVISION_BATTERY)"
 	@echo "build products --"
 	@echo "               $(OUTPUT_NAME).elf"
 	@echo "               $(OUTPUT_NAME).hex"

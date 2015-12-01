@@ -17,6 +17,7 @@
 #include "app_timer_appsh.h"
 #include "pstorage.h"
 
+#include "bsp.h"
 #include "config.h"
 #include "advert.h"
 #include "connect.h"
@@ -337,6 +338,9 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
         case BLE_GAP_EVT_CONNECTED:
             PUTS("on_ble_evt: CONNECTED");
             m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
+
+            APP_ERROR_CHECK( bsp_indication_set(BSP_INDICATE_CONNECTED) );
+            
             break;
 
         case BLE_GAP_EVT_DISCONNECTED:

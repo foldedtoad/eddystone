@@ -26,9 +26,7 @@
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
 
-//static ble_gap_adv_params_t   m_adv_params;
-
-static ble_gap_adv_params_t   m_adv_params_connectable = {
+static const ble_gap_adv_params_t   m_adv_params_connectable = {
     .type         = BLE_GAP_ADV_TYPE_ADV_IND,
     .p_peer_addr  = NULL,
     .fp           = 0,
@@ -38,7 +36,7 @@ static ble_gap_adv_params_t   m_adv_params_connectable = {
     .channel_mask = {0,0,0},
 };
 
-static ble_gap_adv_params_t   m_adv_params_nonconnectable = {
+static const ble_gap_adv_params_t   m_adv_params_nonconnectable = {
     .type         = BLE_GAP_ADV_TYPE_ADV_NONCONN_IND,
     .p_peer_addr  = NULL,
     .fp           = 0,
