@@ -8,7 +8,7 @@
 #include "nrf.h"
 #include "uart.h"
 #include "nrf_gpio.h"
-#include "pilsy_board.h"
+#include "boards.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                                                            */

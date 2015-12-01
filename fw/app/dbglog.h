@@ -1,5 +1,6 @@
 /*----------------------------------------------------------------------------*/
 /*  dbglog.h   for debug log output                                           */
+/*  Copyright (c) 2015 Robin Callender. All Rights Reserved.                  */
 /*----------------------------------------------------------------------------*/
 #ifndef DBGLOG_H
 #define DBGLOG_H
