@@ -195,13 +195,13 @@ int main(void)
     gap_params_init();
     services_init();
     eddystone_init();
-    advertising_init();
+//    advertising_init();
     conn_params_init();
     sec_params_init();
 
     device_manager_init();
 
-    advertising_start();
+    advertising_start_connectable();
 
     /* Enter main loop. */
     for (;;) {

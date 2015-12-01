@@ -343,7 +343,7 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
             PUTS("on_ble_evt: DISCONNECTED");
             m_conn_handle = BLE_CONN_HANDLE_INVALID;
 
-            advertising_start();
+            advertising_start_connectable();
             break;
 
         case BLE_GAP_EVT_SEC_PARAMS_REQUEST:
@@ -396,8 +396,8 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
         case BLE_GAP_EVT_TIMEOUT:
             if (p_ble_evt->evt.gap_evt.params.timeout.src == BLE_GAP_TIMEOUT_SRC_ADVERTISING) {
 
-                /* Go to system-off mode */
-                APP_ERROR_CHECK( sd_power_system_off() );
+                /* Set to Non-Connect Advertising mode */
+                advertising_start_nonconnectable();
             }
             break;
 
