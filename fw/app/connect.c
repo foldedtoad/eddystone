@@ -18,6 +18,8 @@
 #include "pstorage.h"
 
 #include "config.h"
+#include "advert.h"
+#include "connect.h"
 #include "dbglog.h"
 #include "pstorage_platform.h"
 #include "ble_dfu.h"
@@ -40,7 +42,7 @@ static dm_application_instance_t m_app_handle;
 static ble_gap_sec_params_t      m_sec_params;              
 
 /* Flag to keep track of ongoing operations on persistent memory. */
-static bool  m_memory_access_in_progress = false;
+static bool                      m_memory_access_in_progress = false;
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -50,8 +52,6 @@ static void app_context_load(dm_handle_t const * p_handle)
     uint32_t                 err_code;
     static uint32_t          context_data;
     dm_application_context_t context;
-
-    PUTS(__func__);
 
     context.len    = sizeof(context_data);
     context.p_data = (uint8_t *)&context_data;
@@ -93,8 +93,6 @@ static uint32_t device_manager_evt_handler(dm_handle_t const * p_handle,
                                            dm_event_t const  * p_event,
                                            uint32_t            event_result)
 {
-    PUTS(__func__);
-
     APP_ERROR_CHECK(event_result);
 
     switch (p_event->event_id) {
@@ -199,8 +197,6 @@ uint32_t service_changed_indicate(void)
 /*---------------------------------------------------------------------------*/
 static void on_conn_params_evt(ble_conn_params_evt_t * p_evt)
 {
-    PUTS(__func__);
-
     if (p_evt->evt_type == BLE_CONN_PARAMS_EVT_FAILED) {
 
         uint32_t err_code;
@@ -216,8 +212,6 @@ static void on_conn_params_evt(ble_conn_params_evt_t * p_evt)
 /*---------------------------------------------------------------------------*/
 static void conn_params_error_handler(uint32_t error)
 {
-    PUTS(__func__);
-
     APP_ERROR_HANDLER( error );
 }
 
@@ -299,7 +293,6 @@ static void dfu_init(void)
 
     /* Initialize the Device Firmware Update Service. */
     memset(&dfus_init, 0, sizeof(dfus_init));
-
     dfus_init.evt_handler   = dfu_app_on_dfu_evt;
     dfus_init.error_handler = NULL;
 
@@ -349,6 +342,8 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
         case BLE_GAP_EVT_DISCONNECTED:
             PUTS("on_ble_evt: DISCONNECTED");
             m_conn_handle = BLE_CONN_HANDLE_INVALID;
+
+            advertising_start();
             break;
 
         case BLE_GAP_EVT_SEC_PARAMS_REQUEST:
@@ -402,7 +397,6 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
             if (p_ble_evt->evt.gap_evt.params.timeout.src == BLE_GAP_TIMEOUT_SRC_ADVERTISING) {
 
                 /* Go to system-off mode */
-                PUTS("system power off");
                 APP_ERROR_CHECK( sd_power_system_off() );
             }
             break;
@@ -421,8 +415,6 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
 /*---------------------------------------------------------------------------*/
 void ble_evt_dispatch(ble_evt_t * p_ble_evt)
 {
-    PUTS(__func__);
-
     ble_conn_params_on_ble_evt(p_ble_evt);
 
     dm_ble_evt_handler(p_ble_evt);
@@ -439,8 +431,6 @@ void ble_evt_dispatch(ble_evt_t * p_ble_evt)
 /*---------------------------------------------------------------------------*/
 static void on_sys_evt(uint32_t sys_evt)
 {
-    PRINTF("%s: %u\n", __func__, (unsigned) sys_evt);
-
     switch (sys_evt) {
 
         case NRF_EVT_FLASH_OPERATION_SUCCESS:
@@ -452,7 +442,7 @@ static void on_sys_evt(uint32_t sys_evt)
             break;
 
         default:
-            // No implementation needed.
+            /* No implementation needed. */
             break;
     }
 }

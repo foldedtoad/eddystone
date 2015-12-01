@@ -5,7 +5,6 @@
 TARGET_BOARD         := BOARD_PCA10028
 
 PROVISION_DBGLOG     := "yes"
-PROVISION_BATTERY    := "yes"
 
 #------------------------------------------------------------------------------
 # Define relative paths to SDK components
@@ -89,8 +88,11 @@ remduplicates = $(strip $(if $1,$(firstword $1) $(call remduplicates,$(filter-ou
 # source common to all targets
 
 C_SOURCE_FILES += ../main.c
+C_SOURCE_FILES += ../advert.c
 C_SOURCE_FILES += ../connect.c
 C_SOURCE_FILES += ../eddystone.c
+C_SOURCE_FILES += ../battery.c
+C_SOURCE_FILES += ../temperature.c
 C_SOURCE_FILES += ../printf.c
 C_SOURCE_FILES += ../hard_fault_handler.c
 C_SOURCE_FILES += ../../bsp/bsp.c
@@ -101,10 +103,6 @@ C_SOURCE_FILES += ../dfu_trigger/dfu_app_handler.c
 ifeq ($(PROVISION_DBGLOG), "yes")
 	CFLAGS += -D PROVISION_DBGLOG=1
 	C_SOURCE_FILES += ../uart.c
-endif
-
-ifeq ($(PROVISION_BATTERY), "yes")
-	CFLAGS += -D PROVISION_BATTERY=1
 endif
 
 C_SOURCE_FILES += $(COMPONENTS)/libraries/button/app_button.c

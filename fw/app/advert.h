@@ -1,11 +1,13 @@
 /*---------------------------------------------------------------------------*/
-/*  eddystone.h                                                              */
+/*  advert.h                                                                 */
 /*  Copyright (c) 2015 Robin Callender. All Rights Reserved.                 */
 /*---------------------------------------------------------------------------*/
-#ifndef EDDYSTONE_H
-#define EDDYSTONE_H
+#ifndef _ADVERT_H_
+#define _ADVERT_H_
 
-void eddystone_init(void);
-void eddystone_scheduler(bool radio_is_active);
+#include <stdint.h>
 
-#endif /* EDDYSTONE_H */
+void advertising_init(void);
+void advertising_start(void);
+
+#endif  /* _ADVERT_H_ */

@@ -58,15 +58,15 @@
  *  This value can vary between 100ms to 10.24s). 
  */
 #define APP_ADV_TIMEOUT                 0
-#define APP_ADV_INTERVAL_MS             100
+#define APP_ADV_INTERVAL_MS             500
 #define APP_ADV_INTERVAL                MSEC_TO_UNITS(APP_ADV_INTERVAL_MS, UNIT_0_625_MS)
 
 /*
  *  Timer parameters
  */
 #define APP_TIMER_PRESCALER             0
-#define APP_TIMER_MAX_TIMERS            (2 + BSP_APP_TIMERS_NUMBER)
-#define APP_TIMER_OP_QUEUE_SIZE         4
+#define APP_TIMER_MAX_TIMERS            (4 + BSP_APP_TIMERS_NUMBER)
+#define APP_TIMER_OP_QUEUE_SIZE         10
 
 /* 
  *  Maximum size of scheduler events. 
