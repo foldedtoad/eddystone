@@ -43,5 +43,5 @@ It is assumed that you have --
 4.1.3. Starting DFU…  
 4.1.4. xx%  
 
-5. After it completes (100%)  
+5. After the download completes (100%), the PCA10028 will reboot and restart the app firmware automatically.
 
