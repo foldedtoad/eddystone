@@ -95,8 +95,6 @@
  */
 #define SCHED_QUEUE_SIZE                20
 
-#define __breakpoint     __ASM volatile ( "bkpt \n" )
-
 /*
  *  Function for error handling, which is called when an error has occurred. 
  *
@@ -112,11 +110,14 @@ void app_error_handler(uint32_t error_code, uint32_t line_num, const uint8_t * p
     PRINTF("app_error: err(0x%x)  line(%u) in %s\n", 
            (unsigned)error_code, (unsigned)line_num, p_file_name);
 
-    __breakpoint;
-
-    while(1);
-
-    //NVIC_SystemReset();
+#if defined(DEBUG)
+    __disable_irq();
+    __BKPT(0);
+    while (1) { /* spin */}
+#else
+    /* On assert, the system can only recover with a reset. */
+    NVIC_SystemReset();
+#endif
 }
 
 /*
