@@ -34,10 +34,27 @@
 
 #define TLM_VERSION              0x00
  
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
+
 typedef struct {
     uint8_t adv_frame [BLE_GAP_ADV_MAX_SIZE];
     uint8_t adv_len;
 } eddystone_frame_t;
+
+typedef struct {
+    uint8_t  flags_len;      // Length: Flags. CSS v5, Part A, 1.3
+    uint8_t  flags_type;     // Flags data type value
+    uint8_t  flags_data;     // Flags data
+    uint8_t  svc_uuid_len;   // Length: Complete list of 16-bit Service UUIDs.
+    uint8_t  svc_uuid_type;  // Complete list of 16-bit Service UUIDs data type value
+    uint16_t svc_uuid_list;  // 16-bit Eddystone UUID
+    uint8_t  svc_data_len;   // Length: Service Data.
+    uint8_t  svc_data_type;  // Service Data data type value
+    uint16_t svc_data_uuid;  // 16-bit Eddystone UUID
+    uint8_t  frame_type;     // eddystone frame type
+} __attribute__ ((packed)) eddystone_header_t;
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -48,31 +65,35 @@ static eddystone_frame_t eddystone_frames [3];
 static uint32_t adv_cnt = 0;
 static uint32_t sec_cnt = 0;
 
+static const eddystone_header_t  header = {
+    .flags_len     = 0x02,
+    .flags_type    = 0x01,
+    .flags_data    = 0x06,
+    .svc_uuid_len  = 0x03,
+    .svc_uuid_type = 0x03,
+    .svc_uuid_list = 0xFEAA,  // 0xAAFE  big-endian flip
+    .svc_data_len  = 0x03,
+    .svc_data_type = 0x16,
+    .svc_data_uuid = 0xFEAA,  // 0xAAFE  big-endian flip
+    .frame_type    = 0x00,
+};
+
+#define SVC_DATA_LEN_OFFSET  (offsetof(eddystone_header_t, svc_data_len) + 1)
+
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
-static uint32_t eddystone_head_encode(uint8_t * p_encoded_data,
-                                      uint8_t   frame_type,
-                                      uint8_t * p_len) 
+static uint32_t eddystone_header(uint8_t * data, uint8_t frame_type, uint8_t * len) 
 {
-    // Check for buffer overflow.
-    if ((*p_len) + 12 > BLE_GAP_ADV_MAX_SIZE) {
+    if ((*len) + sizeof(eddystone_header_t) > BLE_GAP_ADV_MAX_SIZE) {
         return NRF_ERROR_DATA_SIZE;
     }
 
-    (*p_len) = 0;
-    p_encoded_data[(*p_len)++] = 0x02; // Length; Flags. CSS v5, Part A, § 1.3
-    p_encoded_data[(*p_len)++] = 0x01; // Flags data type value
-    p_encoded_data[(*p_len)++] = 0x06; // Flags data
-    p_encoded_data[(*p_len)++] = 0x03; // Length; Complete list of 16-bit Service UUIDs. Ibid. § 1.1
-    p_encoded_data[(*p_len)++] = 0x03; // Complete list of 16-bit Service UUIDs data type value
-    p_encoded_data[(*p_len)++] = 0xAA; // 16-bit Eddystone UUID
-    p_encoded_data[(*p_len)++] = 0xFE;
-    p_encoded_data[(*p_len)++] = 0x03; // Length; Service Data. Ibid. § 1.11
-    p_encoded_data[(*p_len)++] = 0x16; // Service Data data type value
-    p_encoded_data[(*p_len)++] = 0xAA; // 16-bit Eddystone UUID
-    p_encoded_data[(*p_len)++] = 0xFE;
-    p_encoded_data[(*p_len)++] = frame_type;
+    memcpy(data, &header, sizeof(header));
+
+    *len = sizeof(eddystone_header_t);
+    
+    ((eddystone_header_t*)data)->frame_type = frame_type;
 
     return NRF_SUCCESS;
 }
@@ -80,18 +101,16 @@ static uint32_t eddystone_head_encode(uint8_t * p_encoded_data,
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
-static uint32_t eddystone_uint32(uint8_t * p_encoded_data,
-                                 uint8_t * p_len,
-                                 uint32_t  val)
+static uint32_t eddystone_uint32(uint8_t * data, uint8_t * len, uint32_t val)
 {
-    if ((*p_len) + 4 > BLE_GAP_ADV_MAX_SIZE) {
+    if ((*len) + sizeof(uint32_t) > BLE_GAP_ADV_MAX_SIZE) {
         return NRF_ERROR_DATA_SIZE;
     }
 
-    p_encoded_data[(*p_len)++] = (uint8_t) (val >> 24u);
-    p_encoded_data[(*p_len)++] = (uint8_t) (val >> 16u);
-    p_encoded_data[(*p_len)++] = (uint8_t) (val >> 8u);
-    p_encoded_data[(*p_len)++] = (uint8_t) (val >> 0u);
+    data[(*len)++] = (uint8_t) (val >> 24);
+    data[(*len)++] = (uint8_t) (val >> 16);
+    data[(*len)++] = (uint8_t) (val >>  8);
+    data[(*len)++] = (uint8_t) (val >>  0);
 
     return NRF_SUCCESS;
 }
@@ -99,16 +118,14 @@ static uint32_t eddystone_uint32(uint8_t * p_encoded_data,
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
-static uint32_t eddystone_uint16(uint8_t * p_encoded_data,
-                                 uint8_t * p_len,
-                                 uint16_t  val)
+static uint32_t eddystone_uint16(uint8_t * data, uint8_t * len, uint16_t val)
 {
-    if ((*p_len) + 2 > BLE_GAP_ADV_MAX_SIZE) {
+    if ((*len) + sizeof(uint16_t) > BLE_GAP_ADV_MAX_SIZE) {
         return NRF_ERROR_DATA_SIZE;
     }
 
-    p_encoded_data[(*p_len)++] = (uint8_t) (val >> 8u);
-    p_encoded_data[(*p_len)++] = (uint8_t) (val >> 0u);
+    data[(*len)++] = (uint8_t) (val >> 8);
+    data[(*len)++] = (uint8_t) (val >> 0);
 
     return NRF_SUCCESS;
 }
@@ -120,12 +137,10 @@ static void eddystone_set_adv_data(uint32_t frame_index)
 {
     uint32_t err_code;
 
-    uint8_t * p_encoded_advdata = eddystone_frames[frame_index].adv_frame;
-    uint8_t   len_advdata       = eddystone_frames[frame_index].adv_len; 
+    uint8_t * encoded_advdata = eddystone_frames[frame_index].adv_frame;
+    uint8_t   len_advdata     = eddystone_frames[frame_index].adv_len; 
 
-    err_code = sd_ble_gap_adv_data_set(p_encoded_advdata, 
-                                       len_advdata,
-                                       NULL, 0);
+    err_code = sd_ble_gap_adv_data_set(encoded_advdata, len_advdata, NULL, 0);
     APP_ERROR_CHECK( err_code );
 }
 
@@ -139,7 +154,7 @@ static void build_tlm_frame_buffer(void)
 
     *len_advdata = 0;
 
-    eddystone_head_encode(encoded_advdata, EDDYSTONE_TLM_TYPE, len_advdata);
+    eddystone_header(encoded_advdata, EDDYSTONE_TLM_TYPE, len_advdata);
 
     encoded_advdata[(*len_advdata)++] = TLM_VERSION;
 
@@ -159,8 +174,8 @@ static void build_tlm_frame_buffer(void)
     encoded_advdata[(*len_advdata)++] = 0x00;
     encoded_advdata[(*len_advdata)++] = 0x00;
 
-    /* Length   Service Data. Ibid. § 1.11 */
-    encoded_advdata[SERVICE_DATA_OFFSET] = (*len_advdata) - 8;
+    /* Update Service Data Length. */
+    encoded_advdata[SERVICE_DATA_OFFSET] = (*len_advdata) - SVC_DATA_LEN_OFFSET;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -173,17 +188,17 @@ static void build_url_frame_buffer(void)
 
     *len_advdata = 0;
 
-    eddystone_head_encode(encoded_advdata, EDDYSTONE_URL_TYPE, len_advdata);
+    eddystone_header(encoded_advdata, EDDYSTONE_URL_TYPE, len_advdata);
 
     encoded_advdata[(*len_advdata)++] = APP_MEASURED_RSSI;
     encoded_advdata[(*len_advdata)++] = URL_PREFIX__http;
 
-    /* set URL string */
+    /* Set URL string */
     memcpy(&encoded_advdata[(*len_advdata)], URL_STRING, URL_LENGTH);
     *len_advdata += URL_LENGTH;
 
-    /* Length   Service Data. Ibid. § 1.11 */
-    encoded_advdata[SERVICE_DATA_OFFSET] = (*len_advdata) - 8;
+    /* Update Service Data Length. */
+    encoded_advdata[SERVICE_DATA_OFFSET] = (*len_advdata) - SVC_DATA_LEN_OFFSET;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -196,7 +211,7 @@ static void build_uid_frame_buffer(void)
 
     *len_advdata = 0;
 
-    eddystone_head_encode(encoded_advdata, EDDYSTONE_UID_TYPE, len_advdata);
+    eddystone_header(encoded_advdata, EDDYSTONE_UID_TYPE, len_advdata);
 
     encoded_advdata[(*len_advdata)++] = APP_MEASURED_RSSI;
 
@@ -217,8 +232,8 @@ static void build_uid_frame_buffer(void)
     encoded_advdata[(*len_advdata)++] = 0x00;
     encoded_advdata[(*len_advdata)++] = 0x00;
 
-    /* Length   Service Data. Ibid. § 1.11 */
-    encoded_advdata[SERVICE_DATA_OFFSET] = (*len_advdata) - 8;
+    /* Update Service Data Length. */
+    encoded_advdata[SERVICE_DATA_OFFSET] = (*len_advdata) - SVC_DATA_LEN_OFFSET;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -226,8 +241,6 @@ static void build_uid_frame_buffer(void)
 /*---------------------------------------------------------------------------*/
 void eddystone_init(void)
 {
-    PUTS(__func__);
-
     memset(eddystone_frames, 0, sizeof(eddystone_frames));
 
     build_uid_frame_buffer();

@@ -27,12 +27,6 @@
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
-
-#define FICR_DEVICEADDR   ((uint8_t*) &NRF_FICR->DEVICEADDR[0])
-
-/*---------------------------------------------------------------------------*/
-/*                                                                           */
-/*---------------------------------------------------------------------------*/
 #if defined(PROVISION_DBGLOG)
 static const struct {
     uint16_t  error_code;
@@ -97,7 +91,6 @@ void app_error_handler(uint32_t error_code,
 /*---------------------------------------------------------------------------*/
 void assert_nrf_callback(uint16_t line_num, const uint8_t *p_file_name)
 {
-    __BKPT();
     app_error_handler(DEAD_BEEF, line_num, p_file_name);
 }
 
@@ -195,7 +188,6 @@ int main(void)
     gap_params_init();
     services_init();
     eddystone_init();
-//    advertising_init();
     conn_params_init();
     sec_params_init();
 
