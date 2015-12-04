@@ -15,6 +15,7 @@ The command below will install intelhex (and hexmerge.py).
 **NOTE:** on linux you may need to change the permission on the hexmerge.py file.
 ```
   $ sudo chmod +x /usr/local/bin/hexmerge.py
+  $ sudo chmod +x /usr/local/bin/hexmerge.pyc
 ```
 
 **NOTE:** hexmerge can take quite a while to run; up to a minute or longer.
