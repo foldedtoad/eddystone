@@ -12,6 +12,11 @@ The command below will install intelhex (and hexmerge.py).
 
      $ sudo pip install intelhex
 
+**NOTE:** on linux you may need to change the permission on the hexmerge.py file.
+```
+  $ sudo chmod +x /usr/local/bin/hexmerge.py
+```
+
 **NOTE:** hexmerge can take quite a while to run; up to a minute or longer.
 
 The sequence of operations are --  
