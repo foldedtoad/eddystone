@@ -12,6 +12,8 @@
 
 #if defined(BOARD_PCA10028)
   #include "pca10028.h"
+#elif defined(BOARD_PCA10001)
+  #include "pca10001.h"
 #else
 #error "Board is not defined or supported"
 #endif

@@ -2,7 +2,8 @@
 #  Eddystone for Nordic nRF51 PCA10028 evaluation boards 
 #------------------------------------------------------------------------------
 
-TARGET_BOARD         := BOARD_PCA10028
+TARGET_BOARD         ?= BOARD_PCA10028
+#TARGET_BOARD         ?= BOARD_PCA10001
 
 PROVISION_DBGLOG     := "yes"
 
@@ -27,14 +28,15 @@ export GNU_INSTALL_ROOT
 MAKEFILE_NAME := $(MAKEFILE_LIST)
 MAKEFILE_DIR := $(dir $(MAKEFILE_NAME) ) 
 
-
-
-MAKEFILE_NAME := $(MAKEFILE_LIST)
-MAKEFILE_DIR := $(dir $(MAKEFILE_NAME) ) 
+TARGET_SOC = none
 
 ifeq ($(TARGET_BOARD), BOARD_PCA10028)
   TARGET_SOC = xxac
-else
+endif
+ifeq ($(TARGET_BOARD), BOARD_PCA10001)
+  TARGET_SOC = xxaa
+endif
+ifeq ($(TARGET_SOC), none)
   ECHO "invalid TARGET_BOARD"
 endif
 

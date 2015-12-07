@@ -6,7 +6,9 @@
 # Selectable build options for Bootloader
 #------------------------------------------------------------------------------
 
-TARGET_BOARD    := BOARD_PCA10028
+TARGET_BOARD    ?= BOARD_PCA10028
+#TARGET_BOARD    ?:= BOARD_PCA10001
+
 DBGLOG_SUPPORT  := "yes"
 BUTTON_SUPPORT  := "no"
 
@@ -21,8 +23,6 @@ TEMPLATE_PATH = $(COMPONENTS)/toolchain/gcc
 OUTPUT_NAME   = bootloader
 VERSION_NAME  = $(OUTPUT_NAME)_$(BUILD_TYPE)_$(TIMESTAMP)
 
-LINKER_SCRIPT = ./bootloader_aa.ld
-
 #------------------------------------------------------------------------------
 # Proceed cautiously beyond this point.  Little should change.
 #------------------------------------------------------------------------------
@@ -35,6 +35,18 @@ export GNU_INSTALL_ROOT
 
 MAKEFILE_NAME := $(MAKEFILE_LIST)
 MAKEFILE_DIR := $(dir $(MAKEFILE_NAME) ) 
+
+ifeq ($(TARGET_BOARD), BOARD_PCA10028)
+	TARGET_SOC = ac
+else
+ifeq ($(TARGET_BOARD), BOARD_PCA10001)
+	TARGET_SOC = aa
+else 
+	ECHO "invalid TARGET_BOARD"
+endif
+endif
+
+LINKER_SCRIPT := ./bootloader_$(TARGET_SOC).ld
 
 ifeq ($(OS),Windows_NT)
   include $(TEMPLATE_PATH)/Makefile.windows
