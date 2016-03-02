@@ -24,7 +24,7 @@
 #define DFU_TYPES_H__
 
 #include <stdint.h>
-#include "nrf51.h"
+#include "nrf52.h"
 #include "app_util.h"
 
 /**@brief Structure holding SoftDevice information to be used by the Bootloader/DFU. 

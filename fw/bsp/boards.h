@@ -1,21 +1,24 @@
-/* 
- *  Copyright (c) 2015 Robin Callender. All Rights Reserved.
+/* Copyright (c) 2014 Nordic Semiconductor. All Rights Reserved.
+ *
+ * The information contained herein is property of Nordic Semiconductor ASA.
+ * Terms and conditions of usage are described in detail in NORDIC
+ * SEMICONDUCTOR STANDARD SOFTWARE LICENSE AGREEMENT.
+ *
+ * Licensees are granted free, non-transferable use of the information. NO
+ * WARRANTY of ANY KIND is provided. This heading must NOT be removed from
+ * the file.
+ *
  */
 #ifndef BOARDS_H
 #define BOARDS_H
 
 #include "nrf_gpio.h"
 
-/*
- *  Only include boards which have Arduino Shield support.
- */
-
-#if defined(BOARD_PCA10028)
-  #include "pca10028.h"
-#elif defined(BOARD_PCA10001)
-  #include "pca10001.h"
+#if defined(BOARD_PCA10036)
+  #include "pca10036.h"
 #else
-#error "Board is not defined or supported"
+#error "Board is not defined"
+
 #endif
 
 #define LEDS_OFF(leds_mask) do {  NRF_GPIO->OUTSET = (leds_mask) & (LEDS_MASK & LEDS_INV_MASK); \

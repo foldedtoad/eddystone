@@ -12,15 +12,14 @@
 
 #include <string.h>
 #include "dfu_app_handler.h"
+#include "dfu_types.h"
 #include "bootloader_util.h"
-#include "nrf.h"
 #include "nrf_sdm.h"
 #include "ble_gatt.h"
 #include "ble_gatts.h"
 #include "app_error.h"
 #include "dfu_ble_svc.h"
 #include "device_manager.h"
-#include "nrf_delay.h"
 #include "dbglog.h"
 
 #define IRQ_ENABLED            0x01                                     /**< Field that identifies if an interrupt is enabled. */
@@ -146,14 +145,14 @@ void bootloader_start(uint16_t conn_handle)
     err_code = sd_softdevice_disable();
     APP_ERROR_CHECK(err_code);
 
-    err_code = sd_softdevice_vector_table_base_set(NRF_UICR->BOOTLOADERADDR);
+    err_code = sd_softdevice_vector_table_base_set(NRF_UICR_BOOT_START_ADDRESS);
     APP_ERROR_CHECK(err_code);
 
     dfu_app_peer_data_set(conn_handle);
 
     NVIC_ClearPendingIRQ(SWI2_IRQn);
     interrupts_disable();
-    bootloader_util_app_start(NRF_UICR->BOOTLOADERADDR);
+    bootloader_util_app_start(NRF_UICR_BOOT_START_ADDRESS);
 }
 
 

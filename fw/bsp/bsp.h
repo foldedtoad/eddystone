@@ -32,6 +32,14 @@
 #include <stdbool.h>
 #include "boards.h"
 
+#if !defined(BSP_DEFINES_ONLY) && !defined(BSP_SIMPLE)
+#include "app_button.h"
+
+#define BSP_BUTTON_ACTION_PUSH      (APP_BUTTON_PUSH)    /**< Represents pushing a button. See @ref bsp_button_action_t. */
+#define BSP_BUTTON_ACTION_RELEASE   (APP_BUTTON_RELEASE) /**< Represents releasing a button. See @ref bsp_button_action_t. */
+#define BSP_BUTTON_ACTION_LONG_PUSH (2)                  /**< Represents pushing and holding a button for @ref BSP_LONG_PUSH_TIMEOUT_MS milliseconds. See also @ref bsp_button_action_t. */
+#endif
+
 /* BSP_UART_SUPPORT
  * This define enables UART support module.
  */
@@ -47,12 +55,22 @@
 #define BSP_BUTTONS_ALL      0xFFFFFFFF
 #define BSP_BUTTONS_NONE     0
 
-#if LEDS_NUMBER > 0
-/**@def BSP_APP_TIMERS_NUMBER
- * Number of @ref app_timer instances required by BSP with LED support.
- */
-#define BSP_APP_TIMERS_NUMBER 2
+#if (LEDS_NUMBER > 0) && !defined(BSP_SIMPLE)
+    #define BSP_LED_APP_TIMERS_NUMBER 2
+#else
+    #define BSP_APP_APP_TIMERS_NUMBER 0
 #endif // LEDS_NUMBER > 0
+
+#if (BUTTONS_NUMBER > 0) && !defined(BSP_SIMPLE)
+    #define BSP_BUTTONS_APP_TIMERS_NUMBER 1
+#else
+    #define BSP_BUTTONS_APP_TIMERS_NUMBER 0
+#endif // LEDS_NUMBER > 0
+
+/**@def BSP_APP_TIMERS_NUMBER
+ * Number of @ref app_timer instances required by the BSP module.
+ */
+#define BSP_APP_TIMERS_NUMBER (BSP_LED_APP_TIMERS_NUMBER + BSP_BUTTONS_APP_TIMERS_NUMBER)
 
 /**@brief Types of BSP initialization.
  */
@@ -60,6 +78,10 @@
 #define BSP_INIT_LED     (1 << 0) /**< This bit enables LEDs during initialization (@ref bsp_init).*/
 #define BSP_INIT_BUTTONS (1 << 1) /**< This bit enables buttons during initialization (@ref bsp_init).*/
 #define BSP_INIT_UART    (1 << 2) /**< This bit enables UART during initialization (@ref bsp_init).*/
+
+#define BSP_LONG_PUSH_TIMEOUT_MS (1000) /**< The time to hold for a long push (in milliseconds). */
+
+typedef uint8_t bsp_button_action_t; /**< The different actions that can be performed on a button. */
 
 #define BSP_INDICATIONS_LIST {                    \
         "BSP_INDICATE_IDLE\n\r",                  \
@@ -129,32 +151,42 @@ typedef enum
  */
 typedef enum
 {
-    BSP_EVENT_NOTHING = 0,                  /**< This will unassign button from event. */
-    BSP_EVENT_CLEAR_BONDING_DATA,
-    BSP_EVENT_CLEAR_ALERT,
-    BSP_EVENT_DISCONNECT,
-    BSP_EVENT_ADVERTISING_START,
-    BSP_EVENT_ADVERTISING_STOP,
-    BSP_EVENT_BOND,
-    BSP_EVENT_RESET,
-    BSP_EVENT_SLEEP,
-    BSP_EVENT_WAKEUP,
-    BSP_EVENT_DFU,
-    BSP_EVENT_KEY_0,                        /**< This event is by default assigned to BSP_BUTTON_0 (only if this button is present). */
-    BSP_EVENT_KEY_1,                        /**< This event is by default assigned to BSP_BUTTON_1 (only if this button is present). */
-    BSP_EVENT_KEY_2,                        /**< This event is by default assigned to BSP_BUTTON_2 (only if this button is present). */
-    BSP_EVENT_KEY_3,                        /**< This event is by default assigned to BSP_BUTTON_3 (only if this button is present). */
-    BSP_EVENT_KEY_4,                        /**< This event is by default assigned to BSP_BUTTON_4 (only if this button is present). */
-    BSP_EVENT_KEY_5,                        /**< This event is by default assigned to BSP_BUTTON_5 (only if this button is present). */
-    BSP_EVENT_KEY_6,                        /**< This event is by default assigned to BSP_BUTTON_6 (only if this button is present). */
-    BSP_EVENT_KEY_7,                        /**< This event is by default assigned to BSP_BUTTON_7 (only if this button is present). */
+    BSP_EVENT_NOTHING = 0,                  /**< Assign this event to an action to prevent the action from generating an event (disable the action). */
+    BSP_EVENT_DEFAULT,                      /**< Assign this event to an action to assign the default event to the action. */
+    BSP_EVENT_CLEAR_BONDING_DATA,           /**< Persistent bonding data should be erased. */
+    BSP_EVENT_CLEAR_ALERT,                  /**< An alert should be cleared. */
+    BSP_EVENT_DISCONNECT,                   /**< A link should be disconnected. */
+    BSP_EVENT_ADVERTISING_START,            /**< The device should start advertising. */
+    BSP_EVENT_ADVERTISING_STOP,             /**< The device should stop advertising. */
+    BSP_EVENT_WHITELIST_OFF,                /**< The device should remove its advertising whitelist. */
+    BSP_EVENT_BOND,                         /**< The device should bond to the currently connected peer. */
+    BSP_EVENT_RESET,                        /**< The device should reset. */
+    BSP_EVENT_SLEEP,                        /**< The device should enter sleep mode. */
+    BSP_EVENT_WAKEUP,                       /**< The device should wake up from sleep mode. */
+    BSP_EVENT_DFU,                          /**< The device should enter DFU mode. */
+    BSP_EVENT_KEY_0,                        /**< Default event of the push action of BSP_BUTTON_0 (only if this button is present). */
+    BSP_EVENT_KEY_1,                        /**< Default event of the push action of BSP_BUTTON_1 (only if this button is present). */
+    BSP_EVENT_KEY_2,                        /**< Default event of the push action of BSP_BUTTON_2 (only if this button is present). */
+    BSP_EVENT_KEY_3,                        /**< Default event of the push action of BSP_BUTTON_3 (only if this button is present). */
+    BSP_EVENT_KEY_4,                        /**< Default event of the push action of BSP_BUTTON_4 (only if this button is present). */
+    BSP_EVENT_KEY_5,                        /**< Default event of the push action of BSP_BUTTON_5 (only if this button is present). */
+    BSP_EVENT_KEY_6,                        /**< Default event of the push action of BSP_BUTTON_6 (only if this button is present). */
+    BSP_EVENT_KEY_7,                        /**< Default event of the push action of BSP_BUTTON_7 (only if this button is present). */
     BSP_EVENT_KEY_LAST = BSP_EVENT_KEY_7,
 } bsp_event_t;
 
+
+typedef struct
+{
+    bsp_event_t push_event;      /**< The event to fire on regular button press. */
+    bsp_event_t long_push_event; /**< The event to fire on long button press. */
+    bsp_event_t release_event;   /**< The event to fire on button release. */
+} bsp_button_event_cfg_t;
+
 /**@brief BSP module event callback function type.
  *
- * @details Upon an event in the BSP module, this callback function will be called to notify
- *          the application about the event.
+ * @details     Upon an event in the BSP module, this callback function will be called to notify
+ *              the application about the event.
  *
  * @param[in]   bsp_event_t BSP event type.
  */
@@ -162,8 +194,8 @@ typedef void (* bsp_event_callback_t)(bsp_event_t);
 
 /**@brief       Function for initializing BSP.
  *
- * @details     The function initializes the board support package to allow state indication and button
- *              reaction. Default events are assigned to buttons.
+ * @details     The function initializes the board support package to allow state indication and
+ *              button reaction. Default events are assigned to buttons.
  * @note        Before calling this function, you must initiate the following required modules:
  *              - @ref app_timer for LED support
  *              - @ref app_gpiote for button support
@@ -186,7 +218,8 @@ uint32_t bsp_init(uint32_t type, uint32_t ticks_per_100ms, bsp_event_callback_t 
  * @details     This function allows to get the state of all buttons.
  *
  * @param[in]   p_buttons_state          This variable will store buttons state. Button 0 state is
- *                                       represented by bit 0 (1=pressed), Button 1 state by bit 1, and so on.
+ *                                       represented by bit 0 (1=pressed), Button 1 state by bit 1,
+ *                                       and so on.
  *
  * @retval      NRF_SUCCESS              If buttons state was successfully read.
  */
@@ -194,27 +227,30 @@ uint32_t bsp_buttons_state_get(uint32_t * p_buttons_state);
 
 /**@brief       Function for checking buttons states.
  *
- * @details     This function checks if the button is pressed. If the button ID iss out of range, the function returns false.
+ * @details     This function checks if the button is pressed. If the button ID iss out of range,
+ *              the function returns false.
  *
  * @param[in]   button                   Button ID to check.
- * @param[in]   p_state                  This variable will store the information whether the specified button is pressed (true) or not.
+ * @param[in]   p_state                  This variable will store the information whether the
+ *                                       specified button is pressed (true) or not.
  *
  * @retval      NRF_SUCCESS              If the button state was successfully read.
  */
 uint32_t bsp_button_is_pressed(uint32_t button, bool * p_state);
 
-/**@brief       Function for assigning specific event to button.
+/**@brief       Function for assigning a specific event to a button.
  *
  * @details     This function allows redefinition of standard events assigned to buttons.
  *              To unassign events, provide the event @ ref BSP_EVENT_NOTHING.
  *
  * @param[in]   button                   Button ID to be redefined.
+ * @param[in]   action                   Button action to assign event to.
  * @param[in]   event                    Event to be assigned to button.
  *
  * @retval      NRF_SUCCESS              If the event was successfully assigned to button.
- * @retval      NRF_ERROR_INVALID_PARAM  If the button ID was invalid.
+ * @retval      NRF_ERROR_INVALID_PARAM  If the button ID or button action was invalid.
  */
-uint32_t bsp_event_to_button_assign(uint32_t button, bsp_event_t event);
+uint32_t bsp_event_to_button_action_assign(uint32_t button, bsp_button_action_t action, bsp_event_t event);
 
 /**@brief       Function for configuring indicators to required state.
  *
@@ -243,22 +279,51 @@ uint32_t bsp_indication_set(bsp_indication_t indicate);
  *
  * @retval      NRF_SUCCESS               If the state was successfully indicated.
  * @retval      NRF_ERROR_NO_MEM          If the internal timer operations queue was full.
- * @retval      NRF_ERROR_INVALID_STATE   If the application timer module has not been initialized, or timer
- *                                        has not been created.
+ * @retval      NRF_ERROR_INVALID_STATE   If the application timer module has not been initialized,
+ *                                        or timer has not been created.
  */
 uint32_t bsp_indication_text_set(bsp_indication_t indicate, const char * p_text);
 
-/**@brief       Function for enabling specified buttons (others are disabled).
+
+/**@brief       Function for enabling all buttons.
  *
- * @details     This function enables the specified buttons and configures them to be scanned.
- *              All other buttons are disabled (inactive).
+ * @details     After calling this function, all buttons will generate events when pressed, and
+ *              all buttons will be able to wake the system up from sleep mode.
  *
- * @param[in]   buttons  Buttons to be enabled, encoded as bits
- *                       (bit 0 = button 0, bit 1 = button 1, etc).
- *
- * @retval      NRF_SUCCESS If the buttons were successfully enabled.
+ * @retval      NRF_SUCCESS              If the buttons were successfully enabled.
+ * @retval      NRF_ERROR_NOT_SUPPORTED  If the board has no buttons or BSP_SIMPLE is defined.
+ * @return      A propagated error.
  */
-uint32_t bsp_buttons_enable(uint32_t buttons);
+uint32_t bsp_buttons_enable(void);
+
+
+/**@brief       Function for disabling all buttons.
+ *
+ * @details     After calling this function, no buttons will generate events when pressed, and
+ *              no buttons will be able to wake the system up from sleep mode.
+ *
+ * @retval      NRF_SUCCESS              If the buttons were successfully disabled.
+ * @retval      NRF_ERROR_NOT_SUPPORTED  If the board has no buttons or BSP_SIMPLE is defined.
+ * @return      A propagated error.
+ */
+uint32_t bsp_buttons_disable(void);
+
+
+/**@brief       Function for configuring wakeup buttons before going into sleep mode.
+ *
+ * @details     After calling this function, only the buttons that are set to 1 in wakeup_buttons
+ *              can be used to wake up the chip. If this function is not called before going to,
+ *              sleep either all or no buttons can wake up the chip.
+ *
+ * This function should only be called immediately before going into sleep.
+ *
+ * @param[in]   wakeup_buttons  Mask describing which buttons should be able to wake up the chip.
+ *
+ * @retval      NRF_SUCCESS              If the buttons were successfully enabled.
+ * @retval      NRF_ERROR_NOT_SUPPORTED  If the board has no buttons or BSP_SIMPLE is defined.
+ */
+uint32_t bsp_wakeup_buttons_set(uint32_t wakeup_buttons);
+
 
 #endif // BSP_H__
 

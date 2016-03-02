@@ -6,7 +6,6 @@
 #include <stdint.h>
 #include <ble_advdata.h>
 
-#include "nrf51.h"
 #include "nrf_soc.h"
 #include "ble.h"
 #include "ble_hci.h"
