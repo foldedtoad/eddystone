@@ -200,6 +200,7 @@ LDFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 
 ASMFLAGS += $(DEBUG_FLAGS)
 ASMFLAGS += -D $(TARGET_BOARD)
+ASMFLAGS += -mcpu=cortex-m4
 ASMFLAGS += -x assembler-with-cpp
 ASMFLAGS += -D SWI_DISABLE0
 ASMFLAGS += -D SOFTDEVICE_PRESENT

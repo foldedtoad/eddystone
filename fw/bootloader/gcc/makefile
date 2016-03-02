@@ -6,8 +6,7 @@
 # Selectable build options for Bootloader
 #------------------------------------------------------------------------------
 
-TARGET_BOARD    ?= BOARD_PCA10028
-#TARGET_BOARD    ?:= BOARD_PCA10001
+TARGET_BOARD    ?= BOARD_PCA10036
 
 DBGLOG_SUPPORT  := "yes"
 BUTTON_SUPPORT  := "no"
@@ -36,17 +35,7 @@ export GNU_INSTALL_ROOT
 MAKEFILE_NAME := $(MAKEFILE_LIST)
 MAKEFILE_DIR := $(dir $(MAKEFILE_NAME) ) 
 
-ifeq ($(TARGET_BOARD), BOARD_PCA10028)
-	TARGET_SOC = ac
-else
-ifeq ($(TARGET_BOARD), BOARD_PCA10001)
-	TARGET_SOC = aa
-else 
-	ECHO "invalid TARGET_BOARD"
-endif
-endif
-
-LINKER_SCRIPT := ./bootloader_$(TARGET_SOC).ld
+LINKER_SCRIPT := ./bootloader.ld
 
 ifeq ($(OS),Windows_NT)
   include $(TEMPLATE_PATH)/Makefile.windows
@@ -152,7 +141,8 @@ INC_PATHS += -I$(COMPONENTS)/libraries/timer
 INC_PATHS += -I$(COMPONENTS)/libraries/util
 
 INC_PATHS += -I$(COMPONENTS)/softdevice/common/softdevice_handler
-INC_PATHS += -I$(COMPONENTS)/softdevice/s110/headers
+INC_PATHS += -I$(COMPONENTS)/softdevice/s132/headers/nrf52
+INC_PATHS += -I$(COMPONENTS)/softdevice/s132/headers
 
 INC_PATHS += -I$(COMPONENTS)/toolchain
 INC_PATHS += -I$(COMPONENTS)/toolchain/gcc
@@ -190,20 +180,23 @@ else
 endif
 
 # flags common to all targets
-#CFLAGS += -save-temps=obj
+#CFLAGS += -save-temps
 CFLAGS += $(DEBUG_FLAGS)
-CFLAGS += -D NRF51
-CFLAGS += -D BLE_STACK_SUPPORT_REQD
-CFLAGS += -D S110
-CFLAGS += -D SOFTDEVICE_PRESENT
 CFLAGS += -D $(TARGET_BOARD)
-CFLAGS += -mcpu=cortex-m0
+CFLAGS += -D NRF52
+CFLAGS += -D BLE_STACK_SUPPORT_REQD
+CFLAGS += -D S132
+CFLAGS += -D SOFTDEVICE_PRESENT
+CFLAGS += -D BLE_DFU_APP_SUPPORT
+CFLAGS += -D CONFIG_GPIO_AS_PINRESET
+CFLAGS += -mcpu=cortex-m4
 CFLAGS += -mthumb -mabi=aapcs --std=gnu99
+CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 CFLAGS += -Wall -Werror
-CFLAGS += -mfloat-abi=soft
+CFLAGS += -Wa,-adhln
 CFLAGS += -ffunction-sections 
-CFLAGS += -fdata-sections -fno-strict-aliasing
-
+CFLAGS += -fdata-sections
+CFLAGS += -fno-strict-aliasing
 CFLAGS += -fno-builtin
 
 # Linker Flags
@@ -211,23 +204,27 @@ LDFLAGS += -Xlinker -Map=$(LISTING_DIRECTORY)/$(OUTPUT_NAME).map
 LDFLAGS += -mthumb -mabi=aapcs
 LDFLAGS += -L $(TEMPLATE_PATH)
 LDFLAGS += -T$(LINKER_SCRIPT)
-LDFLAGS += -mcpu=cortex-m0
 LDFLAGS += $(DEBUG_FLAGS)
 LDFLAGS += -Wl,--gc-sections
+LDFLAGS += -mcpu=cortex-m4
 LDFLAGS += --specs=nano.specs -lc -lnosys
+LDFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 
 # Assembler flags
 ASMFLAGS += $(DEBUG_FLAGS)
-ASMFLAGS += -x assembler-with-cpp
-ASMFLAGS += -mcpu=cortex-m0
-ASMFLAGS += -mthumb -mabi=aapcs --std=gnu99
-ASMFLAGS += -D NRF51
-ASMFLAGS += -D BLE_STACK_SUPPORT_REQD
-ASMFLAGS += -D S110
-ASMFLAGS += -D SOFTDEVICE_PRESENT
 ASMFLAGS += -D $(TARGET_BOARD)
+ASMFLAGS += -x assembler-with-cpp
+ASMFLAGS += -mcpu=cortex-m4
+ASMFLAGS += -mthumb -mabi=aapcs --std=gnu99
+ASMFLAGS += -D SWI_DISABLE0
+ASMFLAGS += -D SOFTDEVICE_PRESENT
+ASMFLAGS += -D NRF52
+ASMFLAGS += -D BLE_STACK_SUPPORT_REQD
+ASMFLAGS += -D CONFIG_GPIO_AS_PINRESET
+ASMFLAGS += -D S132
 ASMFLAGS += -D __STACK_SIZE=$(STACK_SIZE)
 ASMFLAGS += -D __HEAP_SIZE=$(HEAP_SIZE)
+
 
 C_SOURCE_FILE_NAMES = $(notdir $(C_SOURCE_FILES))
 C_PATHS = $(call remduplicates, $(dir $(C_SOURCE_FILES) ) )

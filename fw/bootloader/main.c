@@ -8,8 +8,8 @@
 
 #include "nordic_common.h"
 #include "nrf.h"
-#include "nrf_error.h"
-#include "nrf_soc.h"
+//#include "nrf_error.h"
+//#include "nrf_soc.h"
 #include "nrf_mbr.h"
 #include "nrf_gpio.h"
 #include "nrf51_bitfields.h"

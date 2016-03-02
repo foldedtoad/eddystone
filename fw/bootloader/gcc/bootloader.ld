@@ -11,7 +11,7 @@ GROUP(-lgcc -lc -lnosys)
 MEMORY
 {
     FLASH (rx) : ORIGIN = 0x00035000, LENGTH = 44K
-    RAM (rwx)  : ORIGIN = 0x20002000, LENGTH = 8K
+    RAM (rwx)  : ORIGIN = 0x20002000, LENGTH = 24K
 
     BOOTLOADER_SETTINGS (rw)  : ORIGIN = 0x0003FC00, LENGTH = 1K
     NRF_UICR_BOOT_START (rwx) : ORIGIN = 0x10001014, LENGTH = 4
@@ -29,4 +29,4 @@ SECTIONS
     } 
 }
 
-INCLUDE "gcc_nrf51_common.ld"
+INCLUDE "gcc_nrf5x_common.ld"
