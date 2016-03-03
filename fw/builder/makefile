@@ -63,14 +63,14 @@ UNIFIED_BOOT = $(UNIFIED_DIR)/$(BOOT_NAME):$(BOOT_OFF):
 #
 #------------------------------------------------------------------------------
 
-DEVICE := nrf52832
+DEVICE := nRF52832_xxAA
 SPEED  := 1000
 
 MAKE := make
 COPY := cp
 MK   := mkdir -p
 
-JLINK    := JLinkExe -if SWD
+JLINK    := JLinkExe -if SWD -speed 1000
 HEXMERGE := hexmerge.py
 
 ifeq ($(MAKECMDGOALS),debug)
