@@ -8,15 +8,11 @@
 
 #include "nordic_common.h"
 #include "nrf.h"
-//#include "nrf_error.h"
-//#include "nrf_soc.h"
 #include "nrf_mbr.h"
 #include "nrf_gpio.h"
-#include "nrf51_bitfields.h"
 #include "softdevice_handler.h"
 #include "ble.h"
 #include "ble_dis.h"
-#include "nrf51.h"
 #include "ble_hci.h"
 #include "app_error.h"
 #include "app_scheduler.h"
@@ -43,7 +39,7 @@
 
 #define LFCLKSRC_OPTION      NRF_CLOCK_LFCLKSRC_XTAL_20_PPM
 
-#define HARDWARE_REV_NAME   "PCA10028"
+#define HARDWARE_REV_NAME   "PCA10036"
 
 /*
  *  Include or not the service_changed characteristic. 

@@ -29,4 +29,4 @@ SECTIONS
     } 
 }
 
-INCLUDE "gcc_nrf5x_common.ld"
+INCLUDE "nrf52_common.ld"

@@ -109,11 +109,11 @@ C_SOURCE_FILES += $(COMPONENTS)/ble/common/ble_conn_params.c
 C_SOURCE_FILES += $(COMPONENTS)/ble/common/ble_srv_common.c
 C_SOURCE_FILES += $(COMPONENTS)/ble/device_manager/device_manager_peripheral.c
 C_SOURCE_FILES += $(COMPONENTS)/ble/ble_radio_notification/ble_radio_notification.c
-C_SOURCE_FILES += $(COMPONENTS)/toolchain/system_nrf51.c
+C_SOURCE_FILES += $(COMPONENTS)/toolchain/system_nrf52.c
 C_SOURCE_FILES += $(COMPONENTS)/softdevice/common/softdevice_handler/softdevice_handler.c
 
 # assembly files common to all targets
-ASM_SOURCE_FILES += $(COMPONENTS)/toolchain/gcc/gcc_startup_nrf51.s
+ASM_SOURCE_FILES += $(COMPONENTS)/toolchain/gcc/gcc_startup_nrf52.s
 
 # includes common to all targets
 INC_PATHS += -I../
@@ -176,8 +176,8 @@ endif
 CFLAGS += $(DEBUG_FLAGS)
 CFLAGS += -D $(TARGET_BOARD)
 CFLAGS += -D NRF52
-CFLAGS += -D BLE_STACK_SUPPORT_REQD
 CFLAGS += -D S132
+CFLAGS += -D BLE_STACK_SUPPORT_REQD
 CFLAGS += -D SOFTDEVICE_PRESENT
 CFLAGS += -D BLE_DFU_APP_SUPPORT
 CFLAGS += -D CONFIG_GPIO_AS_PINRESET
@@ -200,14 +200,17 @@ LDFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 
 ASMFLAGS += $(DEBUG_FLAGS)
 ASMFLAGS += -D $(TARGET_BOARD)
-ASMFLAGS += -mcpu=cortex-m4
-ASMFLAGS += -x assembler-with-cpp
+ASMFLAGS += -D NRF52
+ASMFLAGS += -D S132
 ASMFLAGS += -D SWI_DISABLE0
 ASMFLAGS += -D SOFTDEVICE_PRESENT
-ASMFLAGS += -D NRF52
 ASMFLAGS += -D BLE_STACK_SUPPORT_REQD
 ASMFLAGS += -D CONFIG_GPIO_AS_PINRESET
-ASMFLAGS += -D S132
+ASMFLAGS += -mcpu=cortex-m4
+ASMFLAGS += -mthumb -mabi=aapcs --std=gnu99
+ASMFLAGS += -x assembler-with-cpp
+
+
 
 C_SOURCE_FILE_NAMES = $(notdir $(C_SOURCE_FILES))
 C_PATHS = $(call remduplicates, $(dir $(C_SOURCE_FILES) ) )

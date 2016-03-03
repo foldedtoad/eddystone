@@ -93,7 +93,7 @@ C_SOURCE_FILES += $(COMPONENTS)/ble/ble_services/ble_dis/ble_dis.c
 C_SOURCE_FILES += $(COMPONENTS)/ble/ble_services/ble_bas/ble_bas.c
 C_SOURCE_FILES += $(COMPONENTS)/ble/ble_services/ble_dfu/ble_dfu.c
 
-C_SOURCE_FILES += $(COMPONENTS)/drivers_nrf/hal/nrf_delay.c
+C_SOURCE_FILES += $(COMPONENTS)/drivers_nrf/delay/nrf_delay.c
 C_SOURCE_FILES += $(COMPONENTS)/drivers_nrf/pstorage/pstorage.c
 
 C_SOURCE_FILES += $(COMPONENTS)/libraries/crc16/crc16.c
@@ -106,10 +106,10 @@ C_SOURCE_FILES += $(COMPONENTS)/libraries/timer/app_timer_appsh.c
 C_SOURCE_FILES += $(COMPONENTS)/softdevice/common/softdevice_handler/softdevice_handler.c
 C_SOURCE_FILES += $(COMPONENTS)/softdevice/common/softdevice_handler/softdevice_handler_appsh.c
 
-C_SOURCE_FILES += $(COMPONENTS)/toolchain/system_nrf51.c
+C_SOURCE_FILES += $(COMPONENTS)/toolchain/system_nrf52.c
 
 # assembly files common to all targets
-ASM_SOURCE_FILES  += $(COMPONENTS)/toolchain/gcc/gcc_startup_nrf51.s
+ASM_SOURCE_FILES  += $(COMPONENTS)/toolchain/gcc/gcc_startup_nrf52.s
 
 # includes common to all targets
 INC_PATHS += -I../
@@ -130,6 +130,7 @@ INC_PATHS += -I$(COMPONENTS)/drivers_nrf/ble_flash
 INC_PATHS += -I$(COMPONENTS)/drivers_nrf/hal
 INC_PATHS += -I$(COMPONENTS)/drivers_nrf/pstorage
 INC_PATHS += -I$(COMPONENTS)/drivers_nrf/pstorage/config
+INC_PATHS += -I$(COMPONENTS)/drivers_nrf/delay
 
 INC_PATHS += -I$(COMPONENTS)/libraries/crc16
 INC_PATHS += -I$(COMPONENTS)/libraries/hci
@@ -189,6 +190,7 @@ CFLAGS += -D S132
 CFLAGS += -D SOFTDEVICE_PRESENT
 CFLAGS += -D BLE_DFU_APP_SUPPORT
 CFLAGS += -D CONFIG_GPIO_AS_PINRESET
+CFLAGS += -D PSTORAGE_RAW_MODE_ENABLE
 CFLAGS += -mcpu=cortex-m4
 CFLAGS += -mthumb -mabi=aapcs --std=gnu99
 CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
