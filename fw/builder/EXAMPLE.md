@@ -196,7 +196,7 @@ Script file read successfully.
 DLL version V4.98e, compiled May  5 2015 11:59:38
 Firmware: J-Link OB-SAM3U128-V2-NordicSemi compiled Aug 28 2015 19:26:24
 Hardware: V1.00
-S/N: 681448408 
+S/N: xxxxxxxxx 
 VTarget = 3.300V
 Info: Found SWD-DP with ID 0x0BB11477
 Info: Found Cortex-M0 r0p0, Little endian.
