@@ -93,32 +93,47 @@
  */
 #define SCHED_QUEUE_SIZE                20
 
-#if 0  // FIXME what is new way to do this ?
+
 /*
- *  Function for error handling, which is called when an error has occurred. 
- *
- *  warning This handler is an example only and does not fit a final product. You need to analyze 
- *          how your product is supposed to react in case of error.
- *
- *  [in] error_code  Error code supplied to the handler.
- *  [in] line_num    Line number where the handler is called.
- *  [in] p_file_name Pointer to the file name. 
+ *   Catch asserts and errors.
  */
-void app_error_handler(uint32_t error_code, uint32_t line_num, const uint8_t * p_file_name)
-{    
-    PRINTF("app_error: err(0x%x)  line(%u) in %s\n", 
-           (unsigned)error_code, (unsigned)line_num, p_file_name);
+void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
+{
+    error_info_t  * pError;
+    assert_info_t * pAssert;
+
+    switch (id) {
+        case NRF_FAULT_ID_SDK_ERROR:
+            pError = (error_info_t*) info;
+            PRINTF("[0x%08x] error(0x%x) at %s(%d)\n",
+                (unsigned) pc,
+                (unsigned) pError->err_code,
+                (char*) pError->p_file_name,
+                (int) pError->line_num);
+            break;
+
+        case NRF_FAULT_ID_SDK_ASSERT:
+            pAssert = (assert_info_t*) info;
+            PRINTF("[0x%08x] assert at %s(%d)\n",
+                (unsigned) pc,
+                (char*) pAssert->p_file_name,
+                (int) pAssert->line_num);
+            break;
+
+        default:
+            PRINTF("unrecognized: id(%d)  pc(0x%x)\n",
+                (unsigned)id, (unsigned)pc);
+            break;
+    }
+
+    __disable_irq();
 
 #if defined(DEBUG)
-    __disable_irq();
     __BKPT(0);
-    while (1) { /* spin */}
-#else
-    /* On assert, the system can only recover with a reset. */
+#endif
+
     NVIC_SystemReset();
-#endif
 }
-#endif
 
 /*
  *  Callback function for asserts in the SoftDevice.

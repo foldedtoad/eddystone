@@ -88,6 +88,54 @@ void app_error_handler(uint32_t error_code,
 }
 #endif
 
+void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
+{
+    error_info_t  * pError;
+    assert_info_t * pAssert;
+    char          * text = "??";
+   
+    (void) text;
+
+    switch (id) {
+        case NRF_FAULT_ID_SDK_ERROR:
+            pError = (error_info_t*) info;
+            for (int i=0; i < NRF_ERRORS_COUNT; i++) {
+                if (pError->err_code == nrf_errors[i].error_code) {
+                    text = nrf_errors[i].text;
+                    break;
+                }
+            }
+            PRINTF("[0x%08x] NRF_ERROR_%s 0x%x at %s(%d)\n",
+                (unsigned) pc,
+                text, (unsigned) pError->err_code,
+                (char*) pError->p_file_name,
+                (int) pError->line_num);
+            break;
+
+        case NRF_FAULT_ID_SDK_ASSERT:
+            pAssert = (assert_info_t*) info;
+            PRINTF("[0x%08x] assert at %s(%d)\n",
+                (unsigned) pc,
+                (char*) pAssert->p_file_name,
+                (int) pAssert->line_num);
+            break;
+
+        default:
+            PRINTF("unrecognized: id(%d)  pc(0x%x)\n",
+                (unsigned)id, (unsigned)pc);
+            break;
+    }
+
+    __disable_irq();
+
+#if defined(DEBUG)
+    __BKPT(0);
+#else
+    NVIC_SystemReset();
+#endif
+}
+
+
 /*---------------------------------------------------------------------------*/
 /*  Callback function for asserts in the SoftDevice.                         */
 /*---------------------------------------------------------------------------*/
