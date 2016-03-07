@@ -11,6 +11,8 @@
 #
 #    $ sudo pip install intelhex
 #
+# NOTE: you may need to do "sudo chmod +x /usr/local/bin/hexmerge.py* "
+#
 # NOTE: hexmerge can take quite a while to run; up to a minute or longer.
 #
 # The sequence of operations are --
@@ -35,14 +37,14 @@
 #------------------------------------------------------------------------------
 
 SD_DIR     = .
-SD_NAME    = s110_nrf51_8.0.0_softdevice.hex
+SD_NAME    = s132_nrf52_2.0.0_softdevice.hex
 SD_HEX     = $(SD_DIR)/$(SD_NAME)
 SD_OFF     = 0x00000
 
 APP_DIR    = ../app/gcc
 APP_NAME   = application.hex
 APP_HEX    = $(APP_DIR)/_build/$(APP_NAME)
-APP_OFF    = 0x18000
+APP_OFF    = 0x1C000
 
 BOOT_DIR   = ../bootloader/gcc
 BOOT_NAME  = bootloader.hex
@@ -61,14 +63,14 @@ UNIFIED_BOOT = $(UNIFIED_DIR)/$(BOOT_NAME):$(BOOT_OFF):
 #
 #------------------------------------------------------------------------------
 
-DEVICE := nrf51822
+DEVICE := nRF52832_xxAA
 SPEED  := 1000
 
 MAKE := make
 COPY := cp
 MK   := mkdir -p
 
-JLINK    := JLinkExe -if SWD
+JLINK    := JLinkExe -if SWD -speed 1000
 HEXMERGE := hexmerge.py
 
 ifeq ($(MAKECMDGOALS),debug)
@@ -78,6 +80,13 @@ else
 endif
 
 TIMESTAMP := $(shell date +'%s')
+
+# echo suspend
+ifeq ("$(VERBOSE)","1")
+  NO_ECHO :=
+else
+  NO_ECHO := @
+endif
 
 #------------------------------------------------------------------------------
 #
@@ -123,7 +132,7 @@ $(UNIFIED_DIR)/flash.jlink: $(APP_HEX) $(BOOT_HEX) $(UNIFIED_HEX)
 #
 #------------------------------------------------------------------------------
 clean:
-	$(MAKE) -C $(APP_DIR)  -f makefile clean
-	$(MAKE) -C $(BOOT_DIR) -f makefile clean
-	$(RM) $(UNIFIED_DIR)/*.hex
-	$(RM) $(UNIFIED_DIR)/*.jlink
+	$(NO_ECHO)$(MAKE) -C $(APP_DIR)  -f makefile clean
+	$(NO_ECHO)$(MAKE) -C $(BOOT_DIR) -f makefile clean
+	$(NO_ECHO)$(RM) $(UNIFIED_DIR)/*.hex
+	$(NO_ECHO)$(RM) $(UNIFIED_DIR)/*.jlink
