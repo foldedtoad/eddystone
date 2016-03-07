@@ -36,8 +36,11 @@
 #
 #------------------------------------------------------------------------------
 
-SD_DIR     = .
-SD_NAME    = s132_nrf52_2.0.0_softdevice.hex
+SDK_BASE      = ../../..
+COMPONENTS    = $(SDK_BASE)/components
+
+SD_DIR     = $(COMPONENTS)/softdevice/s132/hex
+SD_NAME    = s132_nrf52_2.0.0-7.alpha_softdevice.hex
 SD_HEX     = $(SD_DIR)/$(SD_NAME)
 SD_OFF     = 0x00000
 
