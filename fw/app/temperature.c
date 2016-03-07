@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "nrf51.h"
+#include "nrf.h"
 #include "nrf_soc.h"
 #include "softdevice_handler.h"
 

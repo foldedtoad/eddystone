@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "nrf52.h"
+#include "nrf.h"
 #include "nrf_soc.h"
 #include "ble_radio_notification.h"
 #include "softdevice_handler.h"
@@ -53,6 +53,7 @@ static const struct {
 #define NRF_ERRORS_COUNT (sizeof(nrf_errors)/sizeof(nrf_errors[0]))
 #endif
 
+#if 0  // FIXME what is new way to catch errors?
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
@@ -85,6 +86,7 @@ void app_error_handler(uint32_t error_code,
     NVIC_SystemReset();
 #endif
 }
+#endif
 
 /*---------------------------------------------------------------------------*/
 /*  Callback function for asserts in the SoftDevice.                         */
@@ -101,6 +103,7 @@ static void ble_stack_init(void)
 {
     ble_gap_addr_t      addr;
     ble_enable_params_t ble_enable_params;
+    uint32_t            app_ram_base;
 
     /* Initialize the SoftDevice handler module. */
     SOFTDEVICE_HANDLER_INIT(NRF_CLOCK_LFCLKSRC_XTAL_20_PPM, false);
@@ -108,7 +111,8 @@ static void ble_stack_init(void)
     /* Enable BLE stack */ 
     memset(&ble_enable_params, 0, sizeof(ble_enable_params));
     ble_enable_params.gatts_enable_params.service_changed = IS_SRVC_CHANGED_CHARACT_PRESENT;
-    APP_ERROR_CHECK( sd_ble_enable(&ble_enable_params) );
+
+    APP_ERROR_CHECK( sd_ble_enable(&ble_enable_params, &app_ram_base) );
 
     sd_ble_gap_address_get(&addr);
     sd_ble_gap_address_set(BLE_GAP_ADDR_CYCLE_MODE_NONE, &addr);
@@ -128,7 +132,6 @@ static void timer_init(void)
     uint32_t err_code;
 
     APP_TIMER_INIT(APP_TIMER_PRESCALER,
-                   APP_TIMER_MAX_TIMERS,
                    APP_TIMER_OP_QUEUE_SIZE,
                    false);
 

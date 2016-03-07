@@ -6,14 +6,24 @@ GROUP(-lgcc -lc -lnosys -lm)
 
 /*
  *   SoftDevice         0x00000 - 0x17FFF    length 96K
- *   App                0x18000 - 0x34FFF    length 116K
+ *   App                0x1C000 - 0x34FFF    length 100K
  *   Bootloader         0x35000 - 0x3FFFF    length 44k
  */
 
 MEMORY
 {
-  FLASH (rx) : ORIGIN = 0x00018000, LENGTH = 116K 
+  FLASH (rx) : ORIGIN = 0x0001C000, LENGTH = 100K 
   RAM (rwx) :  ORIGIN = 0x20002000, LENGTH = 24K 
 }
 
-INCLUDE "gcc_nrf51_common.ld"
+SECTIONS
+{
+  .fs_data_out ALIGN(4):
+  {
+    PROVIDE( __start_fs_data = .);
+    KEEP(*(fs_data))
+    PROVIDE( __stop_fs_data = .);
+  } = 0
+}
+
+INCLUDE "nrf5x_common.ld"

@@ -27,7 +27,7 @@ export GNU_INSTALL_ROOT
 MAKEFILE_NAME := $(MAKEFILE_LIST)
 MAKEFILE_DIR := $(dir $(MAKEFILE_NAME) ) 
 
-LINKER_SCRIPT := ./gcc_nrf52_dfu.ld
+LINKER_SCRIPT := ./gcc_nrf_dfu.ld
 
 ifeq ($(OS),Windows_NT)
   include $(TEMPLATE_PATH)/Makefile.windows

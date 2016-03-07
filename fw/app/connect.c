@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <ble_advdata.h>
 
-#include "nrf51.h"
+#include "nrf.h"
 #include "nrf_soc.h"
 #include "ble.h"
 #include "ble_hci.h"
@@ -69,7 +69,7 @@ static void app_context_load(dm_handle_t const * p_handle)
             if ((err_code != NRF_SUCCESS) &&
                 (err_code != BLE_ERROR_INVALID_CONN_HANDLE) &&
                 (err_code != NRF_ERROR_INVALID_STATE) &&
-                (err_code != BLE_ERROR_NO_TX_BUFFERS) &&
+                (err_code != BLE_ERROR_NO_TX_PACKETS) &&
                 (err_code != NRF_ERROR_BUSY) &&
                 (err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING)) {
 
@@ -175,7 +175,7 @@ uint32_t service_changed_indicate(void)
 
         case BLE_ERROR_INVALID_CONN_HANDLE:
         case NRF_ERROR_INVALID_STATE:
-        case BLE_ERROR_NO_TX_BUFFERS:
+        case BLE_ERROR_NO_TX_PACKETS:
         case NRF_ERROR_BUSY:
         case BLE_ERROR_GATTS_SYS_ATTR_MISSING:
             PRINTF("service_changed minor error: %u\n", (unsigned)err_code); 
