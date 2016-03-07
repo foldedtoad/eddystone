@@ -1,9 +1,8 @@
 #------------------------------------------------------------------------------
-#  Eddystone for Nordic nRF51 PCA10028 evaluation boards 
+#  Eddystone for Nordic nRF5x PCA10036 evaluation boards 
 #------------------------------------------------------------------------------
 
-TARGET_BOARD         ?= BOARD_PCA10028
-#TARGET_BOARD         ?= BOARD_PCA10001
+TARGET_BOARD         ?= BOARD_PCA10036
 
 PROVISION_DBGLOG     := "yes"
 
@@ -28,19 +27,7 @@ export GNU_INSTALL_ROOT
 MAKEFILE_NAME := $(MAKEFILE_LIST)
 MAKEFILE_DIR := $(dir $(MAKEFILE_NAME) ) 
 
-TARGET_SOC = none
-
-ifeq ($(TARGET_BOARD), BOARD_PCA10028)
-  TARGET_SOC = xxac
-endif
-ifeq ($(TARGET_BOARD), BOARD_PCA10001)
-  TARGET_SOC = xxaa
-endif
-ifeq ($(TARGET_SOC), none)
-  ECHO "invalid TARGET_BOARD"
-endif
-
-LINKER_SCRIPT := ./gcc_nrf51_s110_$(TARGET_SOC)_dfu.ld
+LINKER_SCRIPT := ./gcc_nrf52_dfu.ld
 
 ifeq ($(OS),Windows_NT)
   include $(TEMPLATE_PATH)/Makefile.windows
@@ -49,15 +36,15 @@ else
 endif
 
 ifeq ($(OS),Windows_NT)
-    EXT = .exe
+	EXT = .exe
 else
-    UNAME_S := $(shell uname -s)
-    ifeq ($(UNAME_S),Linux)
-        EXT =
-    endif
-    ifeq ($(UNAME_S),Darwin)
-        EXT = .osx
-    endif
+	UNAME_S := $(shell uname -s)
+	ifeq ($(UNAME_S),Linux)
+		EXT =
+	endif
+	ifeq ($(UNAME_S),Darwin)
+		EXT = .osx
+	endif
 endif
 
 # echo suspend
@@ -87,7 +74,7 @@ BUILDMETRICS  := ./buildmetrics.py
 # function for removing duplicates in a list
 remduplicates = $(strip $(if $1,$(firstword $1) $(call remduplicates,$(filter-out $(firstword $1),$1))))
 
-# source common to all targets
+# source common to allADC targets
 
 C_SOURCE_FILES += ../main.c
 C_SOURCE_FILES += ../advert.c
@@ -100,7 +87,7 @@ C_SOURCE_FILES += ../hard_fault_handler.c
 C_SOURCE_FILES += ../../bsp/bsp.c
 C_SOURCE_FILES += ../dfu_trigger/ble_dfu.c
 C_SOURCE_FILES += ../dfu_trigger/bootloader_util_gcc.c
-C_SOURCE_FILES += ../dfu_trigger/dfu_app_handler.c
+C_SOURCE_FILES += ../dfADCu_trigger/dfu_app_handler.c
 
 ifeq ($(PROVISION_DBGLOG), "yes")
 	CFLAGS += -D PROVISION_DBGLOG=1
@@ -109,54 +96,58 @@ endif
 
 C_SOURCE_FILES += $(COMPONENTS)/libraries/button/app_button.c
 C_SOURCE_FILES += $(COMPONENTS)/libraries/util/app_error.c
-C_SOURCE_FILES += $(COMPONENTS)/libraries/fifo/app_fifo.c
 C_SOURCE_FILES += $(COMPONENTS)/libraries/timer/app_timer.c
 C_SOURCE_FILES += $(COMPONENTS)/libraries/timer/app_timer_appsh.c
 C_SOURCE_FILES += $(COMPONENTS)/libraries/scheduler/app_scheduler.c
-C_SOURCE_FILES += $(COMPONENTS)/drivers_nrf/pstorage/pstorage.c
 C_SOURCE_FILES += $(COMPONENTS)/libraries/util/nrf_assert.c
-C_SOURCE_FILES += $(COMPONENTS)/drivers_nrf/uart/app_uart_fifo.c
-C_SOURCE_FILES += $(COMPONENTS)/drivers_nrf/hal/nrf_delay.c
+C_SOURCE_FILES += $(COMPONENTS)/drivers_nrf/pstorage/pstorage.c
+C_SOURCE_FILES += $(COMPONENTS)/drivers_nrf/delay/nrf_delay.c
 C_SOURCE_FILES += $(COMPONENTS)/drivers_nrf/common/nrf_drv_common.c
+C_SOURCE_FILES += $(COMPONENTS)/drivers_nrf/gpiote/nrf_drv_gpiote.c
 C_SOURCE_FILES += $(COMPONENTS)/ble/common/ble_advdata.c
 C_SOURCE_FILES += $(COMPONENTS)/ble/common/ble_conn_params.c
 C_SOURCE_FILES += $(COMPONENTS)/ble/common/ble_srv_common.c
-C_SOURCE_FILES += $(COMPONENTS)/ble/ble_radio_notification/ble_radio_notification.c
-C_SOURCE_FILES += $(COMPONENTS)/toolchain/system_nrf51.c
-C_SOURCE_FILES += $(COMPONENTS)/softdevice/common/softdevice_handler/softdevice_handler.c
 C_SOURCE_FILES += $(COMPONENTS)/ble/device_manager/device_manager_peripheral.c
-C_SOURCE_FILES += $(COMPONENTS)/libraries/gpiote/app_gpiote.c
+C_SOURCE_FILES += $(COMPONENTS)/ble/ble_radio_notification/ble_radio_notification.c
+C_SOURCE_FILES += $(COMPONENTS)/toolchain/system_nrf52.c
+C_SOURCE_FILES += $(COMPONENTS)/softdevice/common/softdevice_handler/softdevice_handler.c
 
 # assembly files common to all targets
-ASM_SOURCE_FILES += $(COMPONENTS)/toolchain/gcc/gcc_startup_nrf51.s
+ASM_SOURCE_FILES += $(COMPONENTS)/toolchain/gcc/gcc_startup_nrf52.s
 
 # includes common to all targets
 INC_PATHS += -I../
 INC_PATHS += -I../dfu_trigger
 INC_PATHS += -I../../bsp/
-INC_PATHS += -I$(COMPONENTS)/drivers_nrf/config
-INC_PATHS += -I$(COMPONENTS)/libraries/util
+INC_PATHS += -I$(COMPONENTS)/device
+INC_PATHS += -I$(COMPONENTS)/toolchain
 INC_PATHS += -I$(COMPONENTS)/toolchain/gcc
+INC_PATHS += -I$(COMPONENTS)/drivers_nrf/config
 INC_PATHS += -I$(COMPONENTS)/drivers_nrf/uart
-INC_PATHS += -I$(COMPONENTS)/ble/common
-INC_PATHS += -I$(COMPONENTS)/ble/ble_radio_notification
 INC_PATHS += -I$(COMPONENTS)/drivers_nrf/common
 INC_PATHS += -I$(COMPONENTS)/drivers_nrf/pstorage
 INC_PATHS += -I$(COMPONENTS)/drivers_nrf/pstorage/config
-INC_PATHS += -I$(COMPONENTS)/softdevice/s110/headers
-INC_PATHS += -I$(COMPONENTS)/libraries/fifo
+INC_PATHS += -I$(COMPONENTS)/drivers_nrf/delay
+INC_PATHS += -I$(COMPONENTS)/drivers_nrf/gpiote
+INC_PATHS += -I$(COMPONENTS)/drivers_nrf/saadc
 INC_PATHS += -I$(COMPONENTS)/drivers_nrf/hal
 INC_PATHS += -I$(COMPONENTS)/drivers_nrf/pstorage
+INC_PATHS += -I$(COMPONENTS)/softdevice/s132/headers
+INC_PATHS += -I$(COMPONENTS)/softdevice/s132/headers/nrf52
+INC_PATHS += -I$(COMPONENTS)/softdevice/common/softdevice_handler
+INC_PATHS += -I$(COMPONENTS)/libraries/bootloader_dfu
+INC_PATHS += -I$(COMPONENTS)/libraries/util
+INC_PATHS += -I$(COMPONENTS)/libraries/uart
+INC_PATHS += -I$(COMPONENTS)/libraries/fifo
 INC_PATHS += -I$(COMPONENTS)/libraries/trace
 INC_PATHS += -I$(COMPONENTS)/libraries/gpiote
-INC_PATHS += -I$(COMPONENTS)/toolchain
-INC_PATHS += -I$(COMPONENTS)/device
-INC_PATHS += -I$(COMPONENTS)/softdevice/common/softdevice_handler
 INC_PATHS += -I$(COMPONENTS)/libraries/timer
 INC_PATHS += -I$(COMPONENTS)/libraries/app_timer_appsh.h
 INC_PATHS += -I$(COMPONENTS)/libraries/scheduler
-INC_PATHS += -I$(COMPONENTS)/drivers_nrf/hal
 INC_PATHS += -I$(COMPONENTS)/libraries/button
+INC_PATHS += -I$(COMPONENTS)/ble/common
+INC_PATHS += -I$(COMPONENTS)/ble/ble_services/ble_bas
+INC_PATHS += -I$(COMPONENTS)/ble/ble_radio_notification
 INC_PATHS += -I$(COMPONENTS)/ble/device_manager
 INC_PATHS += -I$(COMPONENTS)/ble/device_manager/config
 
@@ -183,36 +174,43 @@ endif
 # flags common to all targets
 #CFLAGS += -save-temps
 CFLAGS += $(DEBUG_FLAGS)
-CFLAGS += -D NRF51
-CFLAGS += -D BLE_STACK_SUPPORT_REQD
-CFLAGS += -D S110
-CFLAGS += -D SOFTDEVICE_PRESENT
 CFLAGS += -D $(TARGET_BOARD)
-#CFLAGS += -D BSP_SIMPLE
+CFLAGS += -D NRF52
+CFLAGS += -D S132
+CFLAGS += -D BLE_STACK_SUPPORT_REQD
+CFLAGS += -D SOFTDEVICE_PRESENT
 CFLAGS += -D BLE_DFU_APP_SUPPORT
-CFLAGS += -mcpu=cortex-m0
+CFLAGS += -D CONFIG_GPIO_AS_PINRESET
+CFLAGS += -mcpu=cortex-m4
 CFLAGS += -mthumb -mabi=aapcs --std=gnu99
+CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 CFLAGS += -Wall -Werror
 CFLAGS += -Wa,-adhln
-CFLAGS += -mfloat-abi=soft
 CFLAGS += -ffunction-sections 
 CFLAGS += -fdata-sections -fno-strict-aliasing
 CFLAGS += -fno-builtin
 
 LDFLAGS += -Xlinker -Map=$(LISTING_DIRECTORY)/$(OUTPUT_NAME).map
 LDFLAGS += -mthumb -mabi=aapcs -L $(TEMPLATE_PATH) -T$(LINKER_SCRIPT)
-LDFLAGS += -mcpu=cortex-m0
 LDFLAGS += $(DEBUG_FLAGS)
 LDFLAGS += -Wl,--gc-sections
+LDFLAGS += -mcpu=cortex-m4
 LDFLAGS += --specs=nano.specs -lc -lnosys
+LDFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 
 ASMFLAGS += $(DEBUG_FLAGS)
-ASMFLAGS += -x assembler-with-cpp
-ASMFLAGS += -D NRF51
-ASMFLAGS += -D BLE_STACK_SUPPORT_REQD
-ASMFLAGS += -D S110
-ASMFLAGS += -D SOFTDEVICE_PRESENT
 ASMFLAGS += -D $(TARGET_BOARD)
+ASMFLAGS += -D NRF52
+ASMFLAGS += -D S132
+ASMFLAGS += -D SWI_DISABLE0
+ASMFLAGS += -D SOFTDEVICE_PRESENT
+ASMFLAGS += -D BLE_STACK_SUPPORT_REQD
+ASMFLAGS += -D CONFIG_GPIO_AS_PINRESET
+ASMFLAGS += -mcpu=cortex-m4
+ASMFLAGS += -mthumb -mabi=aapcs --std=gnu99
+ASMFLAGS += -x assembler-with-cpp
+
+
 
 C_SOURCE_FILE_NAMES = $(notdir $(C_SOURCE_FILES))
 C_PATHS = $(call remduplicates, $(dir $(C_SOURCE_FILES) ) )

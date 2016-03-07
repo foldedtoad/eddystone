@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "nrf51.h"
+#include "nrf52.h"
 #include "nrf_soc.h"
 #include "ble_radio_notification.h"
 #include "softdevice_handler.h"
