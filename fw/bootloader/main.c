@@ -12,11 +12,9 @@
 #include "nrf_soc.h"
 #include "nrf_mbr.h"
 #include "nrf_gpio.h"
-#include "nrf51_bitfields.h"
 #include "softdevice_handler.h"
 #include "ble.h"
 #include "ble_dis.h"
-#include "nrf51.h"
 #include "ble_hci.h"
 #include "app_error.h"
 #include "app_scheduler.h"
@@ -38,12 +36,12 @@
 #define MANUFACTURER_NAME    "Callender Consulting"
 #define MODEL_NUM            "Model-1"
 #define MANUFACTURER_ID      0x1122334455
-#define FIRMWARE_REV_NAME    "SD 8.0"
+#define FIRMWARE_REV_NAME    "SD 11.0"
 #define SOFTWARE_REV_NAME    "Built on "__DATE__ " at " __TIME__
 
 #define LFCLKSRC_OPTION      NRF_CLOCK_LFCLKSRC_XTAL_20_PPM
 
-#define HARDWARE_REV_NAME   "PCA10028"
+#define HARDWARE_REV_NAME   "PCA10036"
 
 /*
  *  Include or not the service_changed characteristic. 
@@ -95,6 +93,7 @@
  */
 #define SCHED_QUEUE_SIZE                20
 
+#if 0  // FIXME what is new way to do this ?
 /*
  *  Function for error handling, which is called when an error has occurred. 
  *
@@ -119,6 +118,7 @@ void app_error_handler(uint32_t error_code, uint32_t line_num, const uint8_t * p
     NVIC_SystemReset();
 #endif
 }
+#endif
 
 /*
  *  Callback function for asserts in the SoftDevice.
@@ -155,7 +155,7 @@ static void leds_init(void)
 static void timers_init(void)
 {
     // Initialize timer module, making it use the scheduler.
-    APP_TIMER_APPSH_INIT(APP_TIMER_PRESCALER, APP_TIMER_MAX_TIMERS, APP_TIMER_OP_QUEUE_SIZE, true);
+    APP_TIMER_APPSH_INIT(APP_TIMER_PRESCALER, APP_TIMER_OP_QUEUE_SIZE, true);
 }
 
 #if defined(BUTTON_SUPPORT)
@@ -199,6 +199,7 @@ static void sys_evt_dispatch(uint32_t event)
 static void ble_stack_init(bool init_softdevice)
 {
     uint32_t         err_code;
+    uint32_t         app_ram_base;
     sd_mbr_command_t com = {SD_MBR_COMMAND_INIT_SD, };
 
     if (init_softdevice)
@@ -217,7 +218,7 @@ static void ble_stack_init(bool init_softdevice)
     ble_enable_params_t ble_enable_params;
     memset(&ble_enable_params, 0, sizeof(ble_enable_params));
     ble_enable_params.gatts_enable_params.service_changed = IS_SRVC_CHANGED_CHARACT_PRESENT;
-    err_code = sd_ble_enable(&ble_enable_params);
+    err_code = sd_ble_enable(&ble_enable_params, &app_ram_base);
     APP_ERROR_CHECK(err_code);
 
     err_code = softdevice_sys_evt_handler_set(sys_evt_dispatch);

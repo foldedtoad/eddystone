@@ -42,7 +42,7 @@
 #define DFU_INIT_H__
 
 #include <stdint.h>
-#include "nrf51.h"
+#include "nrf.h"
 
 /**@brief Structure contained in an init packet. Contains information on device type, revision, and 
  *        supported SoftDevices.

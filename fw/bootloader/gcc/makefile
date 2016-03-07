@@ -6,8 +6,7 @@
 # Selectable build options for Bootloader
 #------------------------------------------------------------------------------
 
-TARGET_BOARD    ?= BOARD_PCA10028
-#TARGET_BOARD    ?:= BOARD_PCA10001
+TARGET_BOARD    ?= BOARD_PCA10036
 
 DBGLOG_SUPPORT  := "yes"
 BUTTON_SUPPORT  := "no"
@@ -36,17 +35,7 @@ export GNU_INSTALL_ROOT
 MAKEFILE_NAME := $(MAKEFILE_LIST)
 MAKEFILE_DIR := $(dir $(MAKEFILE_NAME) ) 
 
-ifeq ($(TARGET_BOARD), BOARD_PCA10028)
-	TARGET_SOC = ac
-else
-ifeq ($(TARGET_BOARD), BOARD_PCA10001)
-	TARGET_SOC = aa
-else 
-	ECHO "invalid TARGET_BOARD"
-endif
-endif
-
-LINKER_SCRIPT := ./bootloader_$(TARGET_SOC).ld
+LINKER_SCRIPT := ./bootloader.ld
 
 ifeq ($(OS),Windows_NT)
   include $(TEMPLATE_PATH)/Makefile.windows
@@ -88,6 +77,7 @@ remduplicates = $(strip $(if $1,$(firstword $1) $(call remduplicates,$(filter-ou
 # source common to all targets
 
 C_SOURCE_FILES += ../main.c
+C_SOURCE_FILES += ../../bsp/bsp.c
 
 C_SOURCE_FILES += ../bootloader_dfu/dfu_init.c
 C_SOURCE_FILES += ../bootloader_dfu/dfu_ble_svc.c
@@ -104,9 +94,11 @@ C_SOURCE_FILES += $(COMPONENTS)/ble/ble_services/ble_dis/ble_dis.c
 C_SOURCE_FILES += $(COMPONENTS)/ble/ble_services/ble_bas/ble_bas.c
 C_SOURCE_FILES += $(COMPONENTS)/ble/ble_services/ble_dfu/ble_dfu.c
 
-C_SOURCE_FILES += $(COMPONENTS)/drivers_nrf/hal/nrf_delay.c
+C_SOURCE_FILES += $(COMPONENTS)/drivers_nrf/delay/nrf_delay.c
 C_SOURCE_FILES += $(COMPONENTS)/drivers_nrf/pstorage/pstorage.c
 
+C_SOURCE_FILES += $(COMPONENTS)/libraries/button/app_button.c
+C_SOURCE_FILES += $(COMPONENTS)/libraries/util/app_error.c
 C_SOURCE_FILES += $(COMPONENTS)/libraries/crc16/crc16.c
 C_SOURCE_FILES += $(COMPONENTS)/libraries/hci/hci_mem_pool.c
 C_SOURCE_FILES += $(COMPONENTS)/libraries/scheduler/app_scheduler.c
@@ -117,10 +109,10 @@ C_SOURCE_FILES += $(COMPONENTS)/libraries/timer/app_timer_appsh.c
 C_SOURCE_FILES += $(COMPONENTS)/softdevice/common/softdevice_handler/softdevice_handler.c
 C_SOURCE_FILES += $(COMPONENTS)/softdevice/common/softdevice_handler/softdevice_handler_appsh.c
 
-C_SOURCE_FILES += $(COMPONENTS)/toolchain/system_nrf51.c
+C_SOURCE_FILES += $(COMPONENTS)/toolchain/system_nrf52.c
 
 # assembly files common to all targets
-ASM_SOURCE_FILES  += $(COMPONENTS)/toolchain/gcc/gcc_startup_nrf51.s
+ASM_SOURCE_FILES  += $(COMPONENTS)/toolchain/gcc/gcc_startup_nrf52.s
 
 # includes common to all targets
 INC_PATHS += -I../
@@ -141,7 +133,11 @@ INC_PATHS += -I$(COMPONENTS)/drivers_nrf/ble_flash
 INC_PATHS += -I$(COMPONENTS)/drivers_nrf/hal
 INC_PATHS += -I$(COMPONENTS)/drivers_nrf/pstorage
 INC_PATHS += -I$(COMPONENTS)/drivers_nrf/pstorage/config
+INC_PATHS += -I$(COMPONENTS)/drivers_nrf/config
+INC_PATHS += -I$(COMPONENTS)/drivers_nrf/gpiote
+INC_PATHS += -I$(COMPONENTS)/drivers_nrf/delay
 
+INC_PATHS += -I$(COMPONENTS)/libraries/button
 INC_PATHS += -I$(COMPONENTS)/libraries/crc16
 INC_PATHS += -I$(COMPONENTS)/libraries/hci
 INC_PATHS += -I$(COMPONENTS)/libraries/gpiote
@@ -152,7 +148,8 @@ INC_PATHS += -I$(COMPONENTS)/libraries/timer
 INC_PATHS += -I$(COMPONENTS)/libraries/util
 
 INC_PATHS += -I$(COMPONENTS)/softdevice/common/softdevice_handler
-INC_PATHS += -I$(COMPONENTS)/softdevice/s110/headers
+INC_PATHS += -I$(COMPONENTS)/softdevice/s132/headers/nrf52
+INC_PATHS += -I$(COMPONENTS)/softdevice/s132/headers
 
 INC_PATHS += -I$(COMPONENTS)/toolchain
 INC_PATHS += -I$(COMPONENTS)/toolchain/gcc
@@ -190,20 +187,24 @@ else
 endif
 
 # flags common to all targets
-#CFLAGS += -save-temps=obj
+#CFLAGS += -save-temps
 CFLAGS += $(DEBUG_FLAGS)
-CFLAGS += -D NRF51
-CFLAGS += -D BLE_STACK_SUPPORT_REQD
-CFLAGS += -D S110
-CFLAGS += -D SOFTDEVICE_PRESENT
 CFLAGS += -D $(TARGET_BOARD)
-CFLAGS += -mcpu=cortex-m0
+CFLAGS += -D NRF52
+CFLAGS += -D BLE_STACK_SUPPORT_REQD
+CFLAGS += -D S132
+CFLAGS += -D SOFTDEVICE_PRESENT
+CFLAGS += -D BLE_DFU_APP_SUPPORT
+CFLAGS += -D CONFIG_GPIO_AS_PINRESET
+CFLAGS += -D PSTORAGE_RAW_MODE_ENABLE
+CFLAGS += -mcpu=cortex-m4
 CFLAGS += -mthumb -mabi=aapcs --std=gnu99
+CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 CFLAGS += -Wall -Werror
-CFLAGS += -mfloat-abi=soft
+CFLAGS += -Wa,-adhln
 CFLAGS += -ffunction-sections 
-CFLAGS += -fdata-sections -fno-strict-aliasing
-
+CFLAGS += -fdata-sections
+CFLAGS += -fno-strict-aliasing
 CFLAGS += -fno-builtin
 
 # Linker Flags
@@ -211,23 +212,27 @@ LDFLAGS += -Xlinker -Map=$(LISTING_DIRECTORY)/$(OUTPUT_NAME).map
 LDFLAGS += -mthumb -mabi=aapcs
 LDFLAGS += -L $(TEMPLATE_PATH)
 LDFLAGS += -T$(LINKER_SCRIPT)
-LDFLAGS += -mcpu=cortex-m0
 LDFLAGS += $(DEBUG_FLAGS)
 LDFLAGS += -Wl,--gc-sections
+LDFLAGS += -mcpu=cortex-m4
 LDFLAGS += --specs=nano.specs -lc -lnosys
+LDFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 
 # Assembler flags
 ASMFLAGS += $(DEBUG_FLAGS)
-ASMFLAGS += -x assembler-with-cpp
-ASMFLAGS += -mcpu=cortex-m0
-ASMFLAGS += -mthumb -mabi=aapcs --std=gnu99
-ASMFLAGS += -D NRF51
-ASMFLAGS += -D BLE_STACK_SUPPORT_REQD
-ASMFLAGS += -D S110
-ASMFLAGS += -D SOFTDEVICE_PRESENT
 ASMFLAGS += -D $(TARGET_BOARD)
+ASMFLAGS += -x assembler-with-cpp
+ASMFLAGS += -mcpu=cortex-m4
+ASMFLAGS += -mthumb -mabi=aapcs --std=gnu99
+ASMFLAGS += -D SWI_DISABLE0
+ASMFLAGS += -D SOFTDEVICE_PRESENT
+ASMFLAGS += -D NRF52
+ASMFLAGS += -D BLE_STACK_SUPPORT_REQD
+ASMFLAGS += -D CONFIG_GPIO_AS_PINRESET
+ASMFLAGS += -D S132
 ASMFLAGS += -D __STACK_SIZE=$(STACK_SIZE)
 ASMFLAGS += -D __HEAP_SIZE=$(HEAP_SIZE)
+
 
 C_SOURCE_FILE_NAMES = $(notdir $(C_SOURCE_FILES))
 C_PATHS = $(call remduplicates, $(dir $(C_SOURCE_FILES) ) )
