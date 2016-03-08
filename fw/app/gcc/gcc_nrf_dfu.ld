@@ -5,14 +5,17 @@ SEARCH_DIR(.)
 GROUP(-lgcc -lc -lnosys -lm)
 
 /*
- *   SoftDevice         0x00000 - 0x17FFF    length 96K
- *   App                0x1C000 - 0x34FFF    length 100K
- *   Bootloader         0x35000 - 0x3FFFF    length 44k
+ *   nRF52832:  512K Flash,  64K RAM
+ *
+ *   SoftDevice             0x00000 - 0x1AFFF    length 111K
+ *   App                    0x1B000 - 0x71FFF    length 345K
+ *   Bootloader             0x72000 - 0x7EFFF    length 52K
+ *   bootloadder_settings   0x7E000 - 0x7FFFF    length 4K
  */
 
 MEMORY
 {
-  FLASH (rx) : ORIGIN = 0x0001C000, LENGTH = 100K 
+  FLASH (rx) : ORIGIN = 0x0001B000, LENGTH = 100K 
   RAM (rwx) :  ORIGIN = 0x20002000, LENGTH = 24K 
 }
 

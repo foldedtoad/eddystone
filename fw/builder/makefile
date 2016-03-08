@@ -47,7 +47,7 @@ SD_OFF     = 0x00000
 APP_DIR    = ../app/gcc
 APP_NAME   = application.hex
 APP_HEX    = $(APP_DIR)/_build/$(APP_NAME)
-APP_OFF    = 0x1C000
+APP_OFF    = 0x1B000
 
 BOOT_DIR   = ../bootloader/gcc
 BOOT_NAME  = bootloader.hex
