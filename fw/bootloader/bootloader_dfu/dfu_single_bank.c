@@ -40,7 +40,7 @@ static uint8_t                      m_init_packet[64];          /**< Init packet
 static uint8_t                      m_init_packet_length;       /**< Length of init packet received. */
 static uint16_t                     m_image_crc;                /**< Calculated CRC of the image received. */
 
-#if 0  // REVIEW  why is this macro not set area to zero?
+#if 0  // REVIEW  why doesn't this macro set the timer area to zero?
     APP_TIMER_DEF(m_dfu_timer_id);  
 #else
 static app_timer_t                  m_dfu_timer_id_data = {.data={0}};
