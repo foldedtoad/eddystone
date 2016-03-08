@@ -53,41 +53,9 @@ static const struct {
 #define NRF_ERRORS_COUNT (sizeof(nrf_errors)/sizeof(nrf_errors[0]))
 #endif
 
-#if 0  // FIXME what is new way to catch errors?
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
-void app_error_handler(uint32_t error_code, 
-                       uint32_t line_num, 
-                       const uint8_t * p_file_name)
-{
-#if defined(PROVISION_DBGLOG)
-    char * text = "??";
-    (void) text;
-
-    for (int i=0; i < NRF_ERRORS_COUNT; i++) {
-        if (error_code == nrf_errors[i].error_code) {
-            text = nrf_errors[i].text;
-            break;
-        }
-    }
-    PRINTF("%s: NRF_ERROR_%s 0x%x, at %s(%d)\n", __func__, text, 
-           (unsigned)error_code, (char*)p_file_name, (int)line_num);
-
-#endif
-
-#if defined(DEBUG)
-    __disable_irq();
-    __BKPT(0);
-    while (1) { /* spin */}
-
-#else
-    /* On assert, the system can only recover with a reset. */
-    NVIC_SystemReset();
-#endif
-}
-#endif
-
 void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
 {
     error_info_t  * pError;
@@ -130,9 +98,9 @@ void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
 
 #if defined(DEBUG)
     __BKPT(0);
-#else
-    NVIC_SystemReset();
 #endif
+
+    NVIC_SystemReset();
 }
 
 
