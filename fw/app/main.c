@@ -24,6 +24,13 @@
   #include "uart.h"
 #endif
 
+ /* 
+  *  Number of central/peripheral links used by the application. 
+  *  When changing this number remember to adjust the RAM settings.
+  */
+#define CENTRAL_LINK_COUNT                   0
+#define PERIPHERAL_LINK_COUNT                1
+
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
@@ -117,18 +124,25 @@ void assert_nrf_callback(uint16_t line_num, const uint8_t *p_file_name)
 /*---------------------------------------------------------------------------*/
 static void ble_stack_init(void)
 {
+    uint32_t            err_code;
     ble_gap_addr_t      addr;
     ble_enable_params_t ble_enable_params;
-    uint32_t            app_ram_base;
 
     /* Initialize the SoftDevice handler module. */
     SOFTDEVICE_HANDLER_INIT(NRF_CLOCK_LFCLKSRC_XTAL_20_PPM, false);
 
     /* Enable BLE stack */ 
     memset(&ble_enable_params, 0, sizeof(ble_enable_params));
+
+    APP_ERROR_CHECK( softdevice_enable_get_default_config(CENTRAL_LINK_COUNT,
+                                                          PERIPHERAL_LINK_COUNT,
+                                                          &ble_enable_params) );
+
     ble_enable_params.gatts_enable_params.service_changed = IS_SRVC_CHANGED_CHARACT_PRESENT;
 
-    APP_ERROR_CHECK( sd_ble_enable(&ble_enable_params, &app_ram_base) );
+    CHECK_RAM_START_ADDR(CENTRAL_LINK_COUNT, PERIPHERAL_LINK_COUNT);
+
+    APP_ERROR_CHECK( softdevice_enable(&ble_enable_params) );
 
     sd_ble_gap_address_get(&addr);
     sd_ble_gap_address_set(BLE_GAP_ADDR_CYCLE_MODE_NONE, &addr);
