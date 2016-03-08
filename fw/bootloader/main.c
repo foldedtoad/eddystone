@@ -13,6 +13,7 @@
 #include "nrf_mbr.h"
 #include "nrf_gpio.h"
 #include "softdevice_handler.h"
+#include "softdevice_handler_appsh.h"
 #include "ble.h"
 #include "ble_dis.h"
 #include "ble_hci.h"
@@ -214,28 +215,31 @@ static void sys_evt_dispatch(uint32_t event)
 static void ble_stack_init(bool init_softdevice)
 {
     uint32_t         err_code;
-    uint32_t         app_ram_base;
     sd_mbr_command_t com = {SD_MBR_COMMAND_INIT_SD, };
+    ble_enable_params_t ble_enable_params;
 
     if (init_softdevice)
     {
         err_code = sd_mbr_command(&com);
         APP_ERROR_CHECK(err_code);
     }
-
+    
     err_code = sd_softdevice_vector_table_base_set(BOOTLOADER_REGION_START);
     APP_ERROR_CHECK(err_code);
+   
+    SOFTDEVICE_HANDLER_APPSH_INIT(NRF_CLOCK_LFCLKSRC_XTAL_20_PPM, true);
 
-    /* Initialize the SoftDevice handler module. See specific board header file */
-    SOFTDEVICE_HANDLER_INIT(LFCLKSRC_OPTION, NULL);
-
-    // Enable BLE stack 
-    ble_enable_params_t ble_enable_params;
+    // Enable BLE stack.
     memset(&ble_enable_params, 0, sizeof(ble_enable_params));
-    ble_enable_params.gatts_enable_params.service_changed = IS_SRVC_CHANGED_CHARACT_PRESENT;
-    err_code = sd_ble_enable(&ble_enable_params, &app_ram_base);
+
+    // Only one connection as a central is used when performing dfu.
+    err_code = softdevice_enable_get_default_config(1, 1, &ble_enable_params);
     APP_ERROR_CHECK(err_code);
 
+    ble_enable_params.gatts_enable_params.service_changed = IS_SRVC_CHANGED_CHARACT_PRESENT;
+    err_code = softdevice_enable(&ble_enable_params);
+    APP_ERROR_CHECK(err_code);
+    
     err_code = softdevice_sys_evt_handler_set(sys_evt_dispatch);
     APP_ERROR_CHECK(err_code);
 }

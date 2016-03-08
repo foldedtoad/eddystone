@@ -98,13 +98,13 @@ C_SOURCE_FILES += $(COMPONENTS)/drivers_nrf/delay/nrf_delay.c
 C_SOURCE_FILES += $(COMPONENTS)/drivers_nrf/pstorage/pstorage.c
 
 C_SOURCE_FILES += $(COMPONENTS)/libraries/button/app_button.c
-C_SOURCE_FILES += $(COMPONENTS)/libraries/util/app_error.c
 C_SOURCE_FILES += $(COMPONENTS)/libraries/crc16/crc16.c
 C_SOURCE_FILES += $(COMPONENTS)/libraries/hci/hci_mem_pool.c
 C_SOURCE_FILES += $(COMPONENTS)/libraries/scheduler/app_scheduler.c
 C_SOURCE_FILES += $(COMPONENTS)/libraries/gpiote/app_gpiote.c
 C_SOURCE_FILES += $(COMPONENTS)/libraries/timer/app_timer.c
 C_SOURCE_FILES += $(COMPONENTS)/libraries/timer/app_timer_appsh.c
+C_SOURCE_FILES += $(COMPONENTS)/libraries/util/app_error.c
 
 C_SOURCE_FILES += $(COMPONENTS)/softdevice/common/softdevice_handler/softdevice_handler.c
 C_SOURCE_FILES += $(COMPONENTS)/softdevice/common/softdevice_handler/softdevice_handler_appsh.c
@@ -145,6 +145,7 @@ INC_PATHS += -I$(COMPONENTS)/libraries/hci
 INC_PATHS += -I$(COMPONENTS)/libraries/hci/config
 INC_PATHS += -I$(COMPONENTS)/libraries/scheduler
 INC_PATHS += -I$(COMPONENTS)/libraries/timer
+INC_PATHS += -I$(COMPONENTS)/libraries/uart
 INC_PATHS += -I$(COMPONENTS)/libraries/util
 
 INC_PATHS += -I$(COMPONENTS)/softdevice/common/softdevice_handler
@@ -307,7 +308,7 @@ $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_NAME).hex: $(OUTPUT_BINARY_DIRECTORY)/$(OUTP
 	@echo Preparing: $(OUTPUT_NAME).hex
 	$(NO_ECHO)$(OBJCOPY) -O ihex $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_NAME).elf $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_NAME).hex
 
-finalize: genbin genhex echosize memory_report
+finalize: genbin genhex echosize # memory_report
 
 # Analyze elf file's idea of memory usage
 memory_report: $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_NAME).elf

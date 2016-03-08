@@ -40,7 +40,13 @@ static uint8_t                      m_init_packet[64];          /**< Init packet
 static uint8_t                      m_init_packet_length;       /**< Length of init packet received. */
 static uint16_t                     m_image_crc;                /**< Calculated CRC of the image received. */
 
-static app_timer_id_t               m_dfu_timer_id;             /**< Application timer id. */
+#if 0  // REVIEW  why is this macro not set area to zero?
+    APP_TIMER_DEF(m_dfu_timer_id);  
+#else
+static app_timer_t                  m_dfu_timer_id_data = {.data={0}};
+static const app_timer_id_t         m_dfu_timer_id = &m_dfu_timer_id_data;
+#endif
+
 static bool                         m_dfu_timed_out = false;    /**< Boolean flag value for tracking DFU timer timeout state. */
 
 static pstorage_handle_t            m_storage_handle_app;       /**< Pstorage handle for the application area (bank 0). Bank used when updating a SoftDevice w/wo bootloader. Handle also used when swapping received application from bank 1 to bank 0. */
