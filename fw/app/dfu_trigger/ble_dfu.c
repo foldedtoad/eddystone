@@ -262,29 +262,33 @@ static bool is_cccd_configured(ble_dfu_t * p_dfu)
  */
 static uint32_t on_ctrl_pt_write(ble_dfu_t * p_dfu, ble_gatts_evt_write_t * p_ble_write_evt)
 {
-    ble_gatts_rw_authorize_reply_params_t write_authorize_reply;
+    ble_gatts_rw_authorize_reply_params_t auth_reply;
 
-    write_authorize_reply.type = BLE_GATTS_AUTHORIZE_TYPE_WRITE;
+    auth_reply.type = BLE_GATTS_AUTHORIZE_TYPE_WRITE;
+    auth_reply.type = BLE_GATTS_AUTHORIZE_TYPE_WRITE;
+    auth_reply.params.write.update = 1;
+    auth_reply.params.write.offset = p_ble_write_evt->offset;
+    auth_reply.params.write.len = p_ble_write_evt->len;
+    auth_reply.params.write.p_data = p_ble_write_evt->data;
+
 
     if (!is_cccd_configured(p_dfu))
     {
         // Send an error response to the peer indicating that the CCCD is improperly configured.
-        write_authorize_reply.params.write.gatt_status =
+        auth_reply.params.write.gatt_status =
             BLE_GATT_STATUS_ATTERR_CPS_CCCD_CONFIG_ERROR;
 
-        return (sd_ble_gatts_rw_authorize_reply(p_dfu->conn_handle, &write_authorize_reply));
+        return (sd_ble_gatts_rw_authorize_reply(p_dfu->conn_handle, &auth_reply));
 
     }
     else
     {
         uint32_t err_code;
 
-        write_authorize_reply.params.write.gatt_status = BLE_GATT_STATUS_SUCCESS;
+        auth_reply.params.write.gatt_status = BLE_GATT_STATUS_SUCCESS;
 
-        err_code = (sd_ble_gatts_rw_authorize_reply(p_dfu->conn_handle, &write_authorize_reply));
-
-        if (err_code != NRF_SUCCESS)
-        {
+        err_code = (sd_ble_gatts_rw_authorize_reply(p_dfu->conn_handle, &auth_reply));
+        if (err_code != NRF_SUCCESS) {
             return err_code;
         }
     }

@@ -189,7 +189,7 @@ void dfu_app_on_dfu_evt(ble_dfu_t * p_dfu, ble_dfu_evt_t * p_evt)
 
 
 void dfu_app_reset_prepare_set(dfu_app_reset_prepare_t reset_prepare_func)
-{
+{    
     m_reset_prepare = reset_prepare_func;
 }
 
