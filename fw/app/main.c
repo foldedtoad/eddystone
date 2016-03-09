@@ -68,6 +68,9 @@ void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
     error_info_t  * pError;
     assert_info_t * pAssert;
     char          * text = "??";
+
+    (void) pError;
+    (void) pAssert;
    
     (void) text;
 

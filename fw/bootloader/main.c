@@ -103,6 +103,9 @@ void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
     error_info_t  * pError;
     assert_info_t * pAssert;
 
+    (void) pError;
+    (void) pAssert;
+
     switch (id) {
         case NRF_FAULT_ID_SDK_ERROR:
             pError = (error_info_t*) info;
