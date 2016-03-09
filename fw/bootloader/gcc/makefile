@@ -8,7 +8,7 @@
 
 TARGET_BOARD    ?= BOARD_PCA10036
 
-DBGLOG_SUPPORT  := "yes"
+DBGLOG_SUPPORT  := "no"
 BUTTON_SUPPORT  := "no"
 
 #------------------------------------------------------------------------------
