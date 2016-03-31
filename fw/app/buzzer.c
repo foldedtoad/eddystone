@@ -9,63 +9,77 @@
 
 #include "nrf.h"
 #include "nrf_gpio.h"
+#include "nrf_delay.h"
 #include "app_timer.h"
 
 #include "boards.h"
 #include "buzzer.h"
-#include "nrf_pwm.h"
 #include "dbglog.h"
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
 
-#define BUZZER_PIN (BUZZ) 
-
 #define TIMER_DELAY_ONE_MS APP_TIMER_TICKS( 1, APP_TIMER_PRESCALER )
 
-static app_timer_id_t   m_buzzer_timer_id;  /* Timer for driving the buzzer */
+static app_timer_id_t   m_buzzer_timer_id;
 
-static bool  in_play = false;
+static volatile bool    m_playing = false;
+static uint32_t         m_freq = 150;
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
-static void buzzer_process_playlist(buzzer_play_t * playlist)
+void buzzer_play_element(void)
 {
-    nrf_gpio_pin_clear(BUZZER_PIN);    // In sure buzzer GPIO is off.
-    nrf_pwm_set_value(0, 0);           // Turn off PWM to buzzer
+    bool toggle = false;
 
-    /*
-     *   Single play.
-     */
-    if (playlist == NULL) {
-        return;
+    while (m_playing) {
+        if (toggle) {
+            toggle = false;
+            nrf_gpio_pin_set(BUZZ2);
+            nrf_gpio_pin_clear(BUZZ1);
+        }
+        else {
+            toggle = true;
+            nrf_gpio_pin_set(BUZZ1);
+            nrf_gpio_pin_clear(BUZZ2);
+        }
+        nrf_delay_us(m_freq); 
     }
 
-    /*
-     *   Play list.
-     */
+    nrf_gpio_pin_clear(BUZZ1);
+    nrf_gpio_pin_clear(BUZZ2);
+}
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
+static void buzzer_play_execute(void * p_event_data, uint16_t event_size)
+{
+    m_playing = true;
+
+    buzzer_play_element();
+}
+
+/*---------------------------------------------------------------------------*/
+/*  This is a crappy way to generate a differencial square wave.             */
+/*  Should investigate using gpiote to drive buzzer pins.                    */
+/*---------------------------------------------------------------------------*/
+static void buzzer_process_playlist(buzzer_play_t * playlist)
+{
     switch (playlist->action) {
 
         case BUZZER_PLAY_TONE:
-
-            // Enable while actively generating PWM signal.
-            nrf_pwm_set_enabled(true);
-
-            // Turn on PWM wave source.
-            nrf_pwm_set_value(0, 62);  
-
-            app_timer_start(m_buzzer_timer_id, 
-                            (playlist->duration * TIMER_DELAY_ONE_MS), 
+            app_timer_start(m_buzzer_timer_id,
+                            (playlist->duration * TIMER_DELAY_ONE_MS),
                             &playlist[1]);
+
+            app_sched_event_put(NULL, 0, buzzer_play_execute);
             break;
 
         case BUZZER_PLAY_QUIET:
-
-            // Disable while quiet: conserve power.
-            nrf_pwm_set_enabled(false);
-
+            m_playing = false;
             app_timer_start(m_buzzer_timer_id, 
                             (playlist->duration * TIMER_DELAY_ONE_MS), 
                             &playlist[1]);
@@ -73,12 +87,7 @@ static void buzzer_process_playlist(buzzer_play_t * playlist)
 
         case BUZZER_PLAY_DONE:
         default:
-
-            // Disable when done: conserve power.
-            nrf_pwm_set_enabled(false);
-
-            // Done: set BUZZER pin to "output".
-            in_play = false;
+            m_playing = false;
             break;
     }
 }
@@ -98,14 +107,7 @@ static void buzzer_timeout_handler(void * context)
 /*---------------------------------------------------------------------------*/
 uint32_t buzzer_play(buzzer_play_t * playlist)
 {
-    if (in_play) return NRF_ERROR_BUSY;
-
     PUTS(__func__);
-
-    in_play = true;
-
-    nrf_gpio_cfg_output(BUZZER_PIN);
-    nrf_gpio_pin_clear(BUZZER_PIN);
 
     buzzer_process_playlist(playlist);
 
@@ -119,9 +121,9 @@ void buzzer_stop(void)
 {
     PUTS(__func__);
 
-    app_timer_stop(m_buzzer_timer_id);
+    m_playing = false;
 
-    nrf_pwm_set_enabled(false);
+    app_timer_stop(m_buzzer_timer_id);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -136,21 +138,10 @@ void buzzer_init(void)
                                 buzzer_timeout_handler);
     APP_ERROR_CHECK(err_code); 
 
-    {
-        nrf_pwm_config_t pwm_config = PWM_DEFAULT_CONFIG;
-        
-        pwm_config.mode             = PWM_MODE_BUZZER;
-        pwm_config.num_channels     = 1;
-        pwm_config.gpio_num[0]      = BUZZER_PIN;        
-        
-        nrf_gpio_cfg_output(BUZZER_PIN);
+    nrf_gpio_cfg_output(BUZZ1);
+    nrf_gpio_cfg_output(BUZZ2);
 
-        nrf_pwm_init(&pwm_config);
-    }
-
-    nrf_pwm_set_enabled(false);
-
-    nrf_gpio_cfg_output(BUZZER_PIN);
-    nrf_gpio_pin_clear(BUZZER_PIN);
+    nrf_gpio_pin_clear(BUZZ1);
+    nrf_gpio_pin_clear(BUZZ2);
 }
 
