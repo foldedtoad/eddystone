@@ -12,6 +12,8 @@
 #ifndef PCA10001_H
 #define PCA10001_H
 
+#define BUZZ           30
+
 #define LED_START      18
 #define LED_0          18
 #define LED_1          19

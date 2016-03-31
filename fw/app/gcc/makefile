@@ -2,8 +2,8 @@
 #  Eddystone for Nordic nRF51 PCA10028 evaluation boards 
 #------------------------------------------------------------------------------
 
-TARGET_BOARD         ?= BOARD_PCA10028
-#TARGET_BOARD         ?= BOARD_PCA10001
+#TARGET_BOARD         ?= BOARD_PCA10028
+TARGET_BOARD         ?= BOARD_PCA10001
 
 PROVISION_DBGLOG     := "yes"
 
@@ -90,6 +90,9 @@ remduplicates = $(strip $(if $1,$(firstword $1) $(call remduplicates,$(filter-ou
 # source common to all targets
 
 C_SOURCE_FILES += ../main.c
+C_SOURCE_FILES += ../tones.c
+C_SOURCE_FILES += ../buzzer.c
+C_SOURCE_FILES += ../nrf_pwm.c
 C_SOURCE_FILES += ../advert.c
 C_SOURCE_FILES += ../connect.c
 C_SOURCE_FILES += ../eddystone.c
@@ -110,6 +113,7 @@ endif
 C_SOURCE_FILES += $(COMPONENTS)/libraries/button/app_button.c
 C_SOURCE_FILES += $(COMPONENTS)/libraries/util/app_error.c
 C_SOURCE_FILES += $(COMPONENTS)/libraries/fifo/app_fifo.c
+C_SOURCE_FILES += $(COMPONENTS)/libraries/gpiote/app_gpiote.c
 C_SOURCE_FILES += $(COMPONENTS)/libraries/timer/app_timer.c
 C_SOURCE_FILES += $(COMPONENTS)/libraries/timer/app_timer_appsh.c
 C_SOURCE_FILES += $(COMPONENTS)/libraries/scheduler/app_scheduler.c
@@ -125,7 +129,6 @@ C_SOURCE_FILES += $(COMPONENTS)/ble/ble_radio_notification/ble_radio_notificatio
 C_SOURCE_FILES += $(COMPONENTS)/toolchain/system_nrf51.c
 C_SOURCE_FILES += $(COMPONENTS)/softdevice/common/softdevice_handler/softdevice_handler.c
 C_SOURCE_FILES += $(COMPONENTS)/ble/device_manager/device_manager_peripheral.c
-C_SOURCE_FILES += $(COMPONENTS)/libraries/gpiote/app_gpiote.c
 
 # assembly files common to all targets
 ASM_SOURCE_FILES += $(COMPONENTS)/toolchain/gcc/gcc_startup_nrf51.s
@@ -145,10 +148,10 @@ INC_PATHS += -I$(COMPONENTS)/drivers_nrf/pstorage
 INC_PATHS += -I$(COMPONENTS)/drivers_nrf/pstorage/config
 INC_PATHS += -I$(COMPONENTS)/softdevice/s110/headers
 INC_PATHS += -I$(COMPONENTS)/libraries/fifo
+INC_PATHS += -I$(COMPONENTS)/libraries/gpiote
 INC_PATHS += -I$(COMPONENTS)/drivers_nrf/hal
 INC_PATHS += -I$(COMPONENTS)/drivers_nrf/pstorage
 INC_PATHS += -I$(COMPONENTS)/libraries/trace
-INC_PATHS += -I$(COMPONENTS)/libraries/gpiote
 INC_PATHS += -I$(COMPONENTS)/toolchain
 INC_PATHS += -I$(COMPONENTS)/device
 INC_PATHS += -I$(COMPONENTS)/softdevice/common/softdevice_handler

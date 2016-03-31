@@ -6,6 +6,7 @@
 
 #include "nrf51.h"
 #include "nrf_soc.h"
+#include "nrf_delay.h"
 #include "ble_radio_notification.h"
 #include "softdevice_handler.h"
 #include "bsp.h"
@@ -13,8 +14,11 @@
 #include "app_timer.h"
 #include "app_timer_appsh.h"
 #include "app_scheduler.h"
+#include "app_gpiote.h"
 
 #include "config.h"
+#include "buzzer.h"
+#include "tones.h"
 #include "advert.h"
 #include "connect.h"
 #include "eddystone.h"
@@ -23,6 +27,8 @@
 #if defined(PROVISION_DBGLOG)
   #include "uart.h"
 #endif
+
+#define APP_GPIOTE_MAX_USERS            2
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -154,6 +160,14 @@ static void radio_init(void)
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
+static void gpiote_init(void)
+{
+    APP_GPIOTE_INIT(APP_GPIOTE_MAX_USERS);
+}
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
 static void scheduler_init(void)
 {
     APP_SCHED_INIT(SCHED_MAX_EVENT_DATA_SIZE, SCHED_QUEUE_SIZE);
@@ -165,6 +179,30 @@ static void scheduler_init(void)
 static void power_manage(void)
 {
     APP_ERROR_CHECK( sd_app_evt_wait() );
+}
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
+static void raw_buzzer_play(void)
+{
+    int i;
+    bool state = false;
+
+    nrf_gpio_cfg_output(BUZZ);
+    nrf_gpio_pin_clear(BUZZ);
+
+    for (i=0; i < 2000; i++) {
+        if (state) {
+            state = false;
+            nrf_gpio_pin_clear(BUZZ);
+        }
+        else {
+            state = true;
+            nrf_gpio_pin_set(BUZZ);
+        }
+        nrf_delay_us(58);
+    }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -185,6 +223,15 @@ int main(void)
     timer_init();
     radio_init();
 
+#if 0
+    raw_buzzer_play();
+#else
+    gpiote_init();
+    buzzer_init();
+    buzzer_play((buzzer_play_t *)&startup_sound);
+#endif
+
+#if 1
     gap_params_init();
     services_init();
     eddystone_init();
@@ -194,6 +241,7 @@ int main(void)
     device_manager_init();
 
     advertising_start_connectable();
+#endif
 
     /* Enter main loop. */
     for (;;) {
