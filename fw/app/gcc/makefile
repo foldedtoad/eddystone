@@ -37,7 +37,7 @@ ifeq ($(TARGET_BOARD), BOARD_PCA10001)
   TARGET_SOC = xxaa
 endif
 ifeq ($(TARGET_SOC), none)
-  ECHO "invalid TARGET_BOARD"
+  $(error invalid TARGET_BOARD)
 endif
 
 LINKER_SCRIPT := ./gcc_nrf51_s110_$(TARGET_SOC)_dfu.ld

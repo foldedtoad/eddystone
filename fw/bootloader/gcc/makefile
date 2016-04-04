@@ -6,8 +6,8 @@
 # Selectable build options for Bootloader
 #------------------------------------------------------------------------------
 
-TARGET_BOARD    ?= BOARD_PCA10028
-#TARGET_BOARD    ?:= BOARD_PCA10001
+#TARGET_BOARD    ?= BOARD_PCA10028
+TARGET_BOARD    ?= BOARD_PCA10001
 
 DBGLOG_SUPPORT  := "yes"
 BUTTON_SUPPORT  := "no"
@@ -36,14 +36,16 @@ export GNU_INSTALL_ROOT
 MAKEFILE_NAME := $(MAKEFILE_LIST)
 MAKEFILE_DIR := $(dir $(MAKEFILE_NAME) ) 
 
+TARGET_SOC = none
+
 ifeq ($(TARGET_BOARD), BOARD_PCA10028)
-	TARGET_SOC = ac
-else
-ifeq ($(TARGET_BOARD), BOARD_PCA10001)
-	TARGET_SOC = aa
-else 
-	ECHO "invalid TARGET_BOARD"
+  TARGET_SOC = ac
 endif
+ifeq ($(TARGET_BOARD), BOARD_PCA10001)
+  TARGET_SOC = aa
+endif
+ifeq ($(TARGET_SOC), none)
+  $(error invalid TARGET_BOARD)
 endif
 
 LINKER_SCRIPT := ./bootloader_$(TARGET_SOC).ld
