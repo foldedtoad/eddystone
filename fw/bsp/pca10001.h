@@ -14,6 +14,7 @@
 
 #define BUZZ1          30
 #define BUZZ2          28
+#define TP1            29
 
 #define LED_START      18
 #define LED_0          18

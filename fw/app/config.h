@@ -59,7 +59,7 @@
  *  The advertising interval for advertisement (100 ms).
  *  This value can vary between 100ms to 10.24s). 
  */
-#define APP_ADV_TIMEOUT                 30
+#define APP_ADV_TIMEOUT                 15
 #define APP_ADV_INTERVAL_MS             100
 #define APP_ADV_INTERVAL                MSEC_TO_UNITS(APP_ADV_INTERVAL_MS, UNIT_0_625_MS)
 

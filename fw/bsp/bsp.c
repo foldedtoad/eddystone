@@ -24,6 +24,8 @@
 #include "app_button.h"
 #endif // BSP_SIMPLE
 
+#include "dbglog.h"
+
 #define ADVERTISING_LED_ON_INTERVAL            200
 #define ADVERTISING_LED_OFF_INTERVAL           1800
 

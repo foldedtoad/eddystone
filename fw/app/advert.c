@@ -21,6 +21,8 @@
 #include "eddystone.h"
 #include "dbglog.h"
 #include "ble_dfu.h"
+#include "buzzer.h"
+#include "tones.h"
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -55,7 +57,7 @@ void advertising_start_connectable(void)
 
     APP_ERROR_CHECK( sd_ble_gap_adv_start(&m_adv_params_connectable) );
 
-    APP_ERROR_CHECK( bsp_indication_set(BSP_INDICATE_ADVERTISING) );
+    //APP_ERROR_CHECK( bsp_indication_set(BSP_INDICATE_ADVERTISING) );
 }
 
 /*---------------------------------------------------------------------------*/
@@ -64,6 +66,8 @@ void advertising_start_connectable(void)
 void advertising_start_nonconnectable(void)
 {
     PUTS(__func__);
+
+    buzzer_play((buzzer_play_t *)&two_beeps_sound);
 
     APP_ERROR_CHECK( sd_ble_gap_adv_start(&m_adv_params_nonconnectable) );
 }
