@@ -189,7 +189,7 @@ int main(void)
     radio_init();
     buzzer_init();
 
-#if 1
+#if 0
     gap_params_init();
     services_init();
     eddystone_init();
