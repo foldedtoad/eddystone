@@ -82,6 +82,11 @@
  */
 #define SCHED_QUEUE_SIZE                10
 
+/* 
+ *  Maximum number of users of the GPIOTE handler.
+ */
+#define APP_GPIOTE_MAX_USERS            2
+
 /*
  *  The Beacon's measured RSSI at 1 meter distance in dBm.
  */

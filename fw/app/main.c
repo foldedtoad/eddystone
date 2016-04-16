@@ -11,9 +11,11 @@
 #include "softdevice_handler.h"
 #include "bsp.h"
 #include "ble_advdata.h"
+
 #include "app_timer.h"
 #include "app_timer_appsh.h"
 #include "app_scheduler.h"
+#include "app_gpiote.h"
 
 #include "config.h"
 #include "buzzer.h"
@@ -126,6 +128,14 @@ static void ble_stack_init(void)
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
+static void gpiote_init(void)
+{
+    APP_GPIOTE_INIT(APP_GPIOTE_MAX_USERS);
+}
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
 static void timer_init(void)
 {
     uint32_t err_code;
@@ -163,6 +173,14 @@ static void scheduler_init(void)
 }
 
 /*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
+static void buzzer_event_execute(void * p_event_data, uint16_t event_size)
+{
+    buzzer_play((buzzer_play_t *)&startup_sound);
+}
+
+/*---------------------------------------------------------------------------*/
 /*  Function for doing power management.                                     */
 /*---------------------------------------------------------------------------*/
 static void power_manage(void)
@@ -184,6 +202,7 @@ int main(void)
 
     PRINTF("\n*** Eddystone: %s %s ***\n\n", __DATE__, __TIME__);
 
+    gpiote_init();
     storage_init();
     timer_init();
     radio_init();
@@ -205,7 +224,8 @@ int main(void)
      *        The playlist is just put on the execute list at this point.
      *        Again, it will be executed from within the for() loop below.
      */
-    buzzer_play((buzzer_play_t *)&startup_sound);
+    //buzzer_play((buzzer_play_t *)&startup_sound);
+    app_sched_event_put(NULL, 0, buzzer_event_execute);
 
     /* Enter main loop. */
     for (;;) {

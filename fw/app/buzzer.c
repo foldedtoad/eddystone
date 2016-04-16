@@ -8,6 +8,7 @@
 #include "config.h"
 
 #include "nrf.h"
+#include "nrf_soc.h"
 #include "nrf_gpio.h"
 #include "nrf_gpiote.h"
 #include "nrf_delay.h"
@@ -21,6 +22,8 @@
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
 
+#define BUZZ_TIMER                NRF_TIMER2
+
 #define GPIOTE_CHANNEL_NUMBER_0   0
 #define GPIOTE_CHANNEL_NUMBER_1   1
 
@@ -29,19 +32,9 @@
 static app_timer_id_t   m_buzzer_timer_id;
 
 /*---------------------------------------------------------------------------*/
-/*                                                                           */
-/*---------------------------------------------------------------------------*/
-static __INLINE void nrf_gpio_pin_pulse(uint32_t pin_number)
-{
-    NRF_GPIO->OUTSET = (1 << pin_number);
-
-    NRF_GPIO->OUTCLR = (1 << pin_number);
-}
-
-/*---------------------------------------------------------------------------*/
 /* Configure a GPIO to toggle on a GPIOTE task.                              */
 /*---------------------------------------------------------------------------*/
-static void gpiote_init(void)
+static void buzzer_gpiote_init(void)
 {
     /*
      * Configure GPIOTE_CHANNEL_NUMBERs to toggle the GPIO pins state.
@@ -59,9 +52,9 @@ static void gpiote_init(void)
 }
 
 /*---------------------------------------------------------------------------*/
-/* Use TIMER0 to generate events every 300 µs.                               */
+/* Use BUZZ_TIMER to generate events every 300 µs.                           */
 /*---------------------------------------------------------------------------*/
-static void timer0_init(void)
+static void buzzer_timer_init(void)
 {
     /* Start 16 MHz crystal oscillator. */
     NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
@@ -71,36 +64,38 @@ static void timer0_init(void)
     while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0) { /* spin */ }
 
     /* Clear TIMER0 */
-    NRF_TIMER0->TASKS_CLEAR = 1;
+    BUZZ_TIMER->TASKS_CLEAR = 1;
 
     /*
      * Configure TIMER0 for compare[0] event every 125µs.
      */
-    NRF_TIMER0->PRESCALER = 2;
-    NRF_TIMER0->CC[0]     = 500;
-    NRF_TIMER0->MODE      = TIMER_MODE_MODE_Timer;
-    NRF_TIMER0->BITMODE   = TIMER_BITMODE_BITMODE_24Bit;
-    NRF_TIMER0->SHORTS    = (TIMER_SHORTS_COMPARE0_CLEAR_Enabled << TIMER_SHORTS_COMPARE0_CLEAR_Pos);
+    BUZZ_TIMER->PRESCALER = 2;
+    BUZZ_TIMER->CC[0]     = 500;
+    BUZZ_TIMER->MODE      = TIMER_MODE_MODE_Timer;
+    BUZZ_TIMER->BITMODE   = TIMER_BITMODE_BITMODE_24Bit;
+    BUZZ_TIMER->SHORTS    = (TIMER_SHORTS_COMPARE0_CLEAR_Enabled << TIMER_SHORTS_COMPARE0_CLEAR_Pos);
 }
 
 /*---------------------------------------------------------------------------*/
 /*  Use a PPI channel to connect the event to the task automatically.        */
 /*---------------------------------------------------------------------------*/ 
-static void ppi_init(void)
+static void buzzer_ppi_init(void)
 {
     /*  
      *  Configure PPI channel 0 to toggle GPIO_OUTPUT_PIN on 
      *  every TIMER0 COMPARE[0] match (300µs)
      */
-    NRF_PPI->CH[0].EEP = (uint32_t) &NRF_TIMER0->EVENTS_COMPARE[0];
-    NRF_PPI->CH[0].TEP = (uint32_t) &NRF_GPIOTE->TASKS_OUT[GPIOTE_CHANNEL_NUMBER_0];
+    sd_ppi_channel_assign(GPIOTE_CHANNEL_NUMBER_0,
+                          &BUZZ_TIMER->EVENTS_COMPARE[0],
+                          &NRF_GPIOTE->TASKS_OUT[GPIOTE_CHANNEL_NUMBER_0]);
 
-    NRF_PPI->CH[1].EEP = (uint32_t) &NRF_TIMER0->EVENTS_COMPARE[0];
-    NRF_PPI->CH[1].TEP = (uint32_t) &NRF_GPIOTE->TASKS_OUT[GPIOTE_CHANNEL_NUMBER_1];
+    sd_ppi_channel_assign(GPIOTE_CHANNEL_NUMBER_1, 
+                          &BUZZ_TIMER->EVENTS_COMPARE[0], 
+                          &NRF_GPIOTE->TASKS_OUT[GPIOTE_CHANNEL_NUMBER_1]);
 
     /* Enable PPI channels */
-    NRF_PPI->CHEN = (PPI_CHEN_CH0_Enabled << PPI_CHEN_CH0_Pos) |
-                    (PPI_CHEN_CH1_Enabled << PPI_CHEN_CH1_Pos);
+    sd_ppi_channel_enable_set((PPI_CHEN_CH0_Enabled << PPI_CHEN_CH0_Pos) |
+                              (PPI_CHEN_CH1_Enabled << PPI_CHEN_CH1_Pos));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -113,13 +108,13 @@ static void buzzer_process_playlist(buzzer_play_t * playlist)
 
         case BUZZER_PLAY_TONE:
 
-            gpiote_init();
-            timer0_init();
-            ppi_init();
+            BUZZ_TIMER->TASKS_STOP = 1;
 
-            NRF_TIMER0->TASKS_START = 1;
+            buzzer_gpiote_init();
+            buzzer_timer_init();
+            buzzer_ppi_init();
 
-            nrf_gpio_pin_pulse(TP1);
+            BUZZ_TIMER->TASKS_START = 1;
 
             app_timer_start(m_buzzer_timer_id,
                             (playlist->duration * TIMER_DELAY_ONE_MS),
@@ -128,10 +123,7 @@ static void buzzer_process_playlist(buzzer_play_t * playlist)
 
         case BUZZER_PLAY_QUIET:
 
-            NRF_TIMER0->TASKS_STOP = 1;
-
-            //nrf_gpio_pin_pulse(TP1);
-            //nrf_gpio_pin_pulse(TP1);
+            BUZZ_TIMER->TASKS_STOP = 1;
 
             app_timer_start(m_buzzer_timer_id,
                             (playlist->duration * TIMER_DELAY_ONE_MS),
@@ -140,7 +132,7 @@ static void buzzer_process_playlist(buzzer_play_t * playlist)
 
         case BUZZER_PLAY_DONE:
         default:
-            NRF_TIMER0->TASKS_STOP = 1;
+            BUZZ_TIMER->TASKS_STOP = 1;
             break;
     }
 }
@@ -151,9 +143,6 @@ static void buzzer_process_playlist(buzzer_play_t * playlist)
 static void buzzer_timeout_handler(void * context)
 {
     buzzer_play_t * playlist = (buzzer_play_t*) context;
-
-    nrf_gpio_pin_pulse(TP1);
-    nrf_gpio_pin_pulse(TP1);
 
     buzzer_process_playlist(playlist);
 }
@@ -175,7 +164,7 @@ void buzzer_stop(void)
 {
     app_timer_stop(m_buzzer_timer_id);
 
-    NRF_TIMER0->TASKS_STOP = 1;
+    BUZZ_TIMER->TASKS_STOP = 1;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -197,7 +186,4 @@ void buzzer_init(void)
 
     nrf_gpio_pin_clear(BUZZ1);
     nrf_gpio_pin_clear(BUZZ2);
-
-    nrf_gpio_cfg_output(TP1);
-    nrf_gpio_pin_clear(TP1);
 }
