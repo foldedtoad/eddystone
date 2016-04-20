@@ -211,7 +211,7 @@ int main(void)
     advertising_start_connectable();
 #endif
 
-    buzzer_play((buzzer_play_t *)&startup_sound);
+    buzzer_play((buzzer_play_t *)&mary_had_a_little_lamb_sound);
 
     /* Enter main loop. */
     for (;;) {

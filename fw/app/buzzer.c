@@ -32,9 +32,9 @@
 static app_timer_id_t   m_buzzer_timer_id;
 
 /*---------------------------------------------------------------------------*/
-/* Configure a GPIO to toggle on a GPIOTE task.                              */
+/* Configure the GPIOs used to toggle on a GPIOTE task.                      */
 /*---------------------------------------------------------------------------*/
-static void buzzer_gpiote_init(void)
+static void buzzer_gpiote_config(void)
 {
     /*
      * Configure GPIOTE_CHANNEL_NUMBERs to toggle the GPIO pins state.
@@ -52,9 +52,25 @@ static void buzzer_gpiote_init(void)
 }
 
 /*---------------------------------------------------------------------------*/
-/* Use BUZZ_TIMER to generate events every 300 µs.                           */
+/* Unconfigure the GPIOs used to toggle on a GPIOTE task.                    */
+/* Insure GPIO lines reconfigured for output and are set low.                */
 /*---------------------------------------------------------------------------*/
-static void buzzer_timer_init(void)
+static void buzzer_gpiote_unconfig(void)
+{
+    nrf_gpiote_unconfig(GPIOTE_CHANNEL_NUMBER_0);
+    nrf_gpiote_unconfig(GPIOTE_CHANNEL_NUMBER_1);
+
+    nrf_gpio_cfg_output(BUZZ1);
+    nrf_gpio_cfg_output(BUZZ2);
+
+    nrf_gpio_pin_clear(BUZZ1);
+    nrf_gpio_pin_clear(BUZZ2);
+}
+
+/*---------------------------------------------------------------------------*/
+/* Use BUZZ_TIMER to generate events 'frequency' period.                     */
+/*---------------------------------------------------------------------------*/
+static void buzzer_timer_config(uint16_t frequency)
 {
     /* Start 16 MHz crystal oscillator. */
     NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
@@ -70,7 +86,7 @@ static void buzzer_timer_init(void)
      * Configure TIMER0 for compare[0] event every 125µs.
      */
     BUZZ_TIMER->PRESCALER = 2;
-    BUZZ_TIMER->CC[0]     = 500;
+    BUZZ_TIMER->CC[0]     = frequency;
     BUZZ_TIMER->MODE      = TIMER_MODE_MODE_Timer;
     BUZZ_TIMER->BITMODE   = TIMER_BITMODE_BITMODE_24Bit;
     BUZZ_TIMER->SHORTS    = (TIMER_SHORTS_COMPARE0_CLEAR_Enabled << TIMER_SHORTS_COMPARE0_CLEAR_Pos);
@@ -79,7 +95,7 @@ static void buzzer_timer_init(void)
 /*---------------------------------------------------------------------------*/
 /*  Use a PPI channel to connect the event to the task automatically.        */
 /*---------------------------------------------------------------------------*/ 
-static void buzzer_ppi_init(void)
+static void buzzer_ppi_config(void)
 {
     /*  
      *  Configure PPI channel 0 to toggle GPIO_OUTPUT_PIN on 
@@ -99,8 +115,7 @@ static void buzzer_ppi_init(void)
 }
 
 /*---------------------------------------------------------------------------*/
-/*  This is a crappy way to generate a differencial square wave.             */
-/*  Should investigate using gpiote to drive buzzer pins.                    */
+/*                                                                           */
 /*---------------------------------------------------------------------------*/
 static void buzzer_process_playlist(buzzer_play_t * playlist)
 {
@@ -110,9 +125,9 @@ static void buzzer_process_playlist(buzzer_play_t * playlist)
 
             BUZZ_TIMER->TASKS_STOP = 1;
 
-            buzzer_gpiote_init();
-            buzzer_timer_init();
-            buzzer_ppi_init();
+            buzzer_gpiote_config();
+            buzzer_timer_config(playlist->frequency);
+            buzzer_ppi_config();
 
             BUZZ_TIMER->TASKS_START = 1;
 
@@ -124,6 +139,7 @@ static void buzzer_process_playlist(buzzer_play_t * playlist)
         case BUZZER_PLAY_QUIET:
 
             BUZZ_TIMER->TASKS_STOP = 1;
+            buzzer_gpiote_unconfig();
 
             app_timer_start(m_buzzer_timer_id,
                             (playlist->duration * TIMER_DELAY_ONE_MS),
@@ -133,6 +149,7 @@ static void buzzer_process_playlist(buzzer_play_t * playlist)
         case BUZZER_PLAY_DONE:
         default:
             BUZZ_TIMER->TASKS_STOP = 1;
+            buzzer_gpiote_unconfig();
             break;
     }
 }
@@ -173,6 +190,7 @@ void buzzer_stop(void)
     app_timer_stop(m_buzzer_timer_id);
 
     BUZZ_TIMER->TASKS_STOP = 1;
+    buzzer_gpiote_unconfig();
 }
 
 /*---------------------------------------------------------------------------*/

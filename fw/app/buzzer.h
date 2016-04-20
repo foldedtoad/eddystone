@@ -13,6 +13,7 @@ typedef enum {
 typedef struct {
     buzzer_play_action_t  action;    // see enum above
     uint16_t              duration;  // in milliseconds
+    uint16_t              frequency; // frequency
 } buzzer_play_t;
 
 void buzzer_init(void);
