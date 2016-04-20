@@ -15,8 +15,8 @@ typedef struct {
     uint16_t              duration;  // in milliseconds
 } buzzer_play_t;
 
-void     buzzer_init(void);
-uint32_t buzzer_play(buzzer_play_t * playlist);
-void     buzzer_stop(void);
+void buzzer_init(void);
+void buzzer_play(buzzer_play_t * playlist);
+void buzzer_stop(void);
 
 #endif /* BUZZER_H__ */

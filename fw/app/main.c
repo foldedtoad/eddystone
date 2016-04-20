@@ -173,14 +173,6 @@ static void scheduler_init(void)
 }
 
 /*---------------------------------------------------------------------------*/
-/*                                                                           */
-/*---------------------------------------------------------------------------*/
-static void buzzer_event_execute(void * p_event_data, uint16_t event_size)
-{
-    buzzer_play((buzzer_play_t *)&startup_sound);
-}
-
-/*---------------------------------------------------------------------------*/
 /*  Function for doing power management.                                     */
 /*---------------------------------------------------------------------------*/
 static void power_manage(void)
@@ -219,13 +211,7 @@ int main(void)
     advertising_start_connectable();
 #endif
 
-    /* 
-     *  Note: Buzzer doesn't start playing until app_sched_execute() runs.
-     *        The playlist is just put on the execute list at this point.
-     *        Again, it will be executed from within the for() loop below.
-     */
-    //buzzer_play((buzzer_play_t *)&startup_sound);
-    app_sched_event_put(NULL, 0, buzzer_event_execute);
+    buzzer_play((buzzer_play_t *)&startup_sound);
 
     /* Enter main loop. */
     for (;;) {

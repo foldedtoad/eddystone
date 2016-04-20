@@ -150,11 +150,19 @@ static void buzzer_timeout_handler(void * context)
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
-uint32_t buzzer_play(buzzer_play_t * playlist)
+static void buzzer_play_execute(void * p_data, uint16_t size)
 {
-    buzzer_process_playlist(playlist);
+    buzzer_play_t ** playlist = (buzzer_play_t**) p_data;
 
-    return NRF_SUCCESS;
+    buzzer_process_playlist(*playlist);
+}
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
+void buzzer_play(buzzer_play_t * playlist)
+{
+    app_sched_event_put(&playlist, sizeof(playlist), buzzer_play_execute);
 }
 
 /*---------------------------------------------------------------------------*/
