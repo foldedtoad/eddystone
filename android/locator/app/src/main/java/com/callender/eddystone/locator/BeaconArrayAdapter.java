@@ -107,7 +107,9 @@ public class BeaconArrayAdapter extends ArrayAdapter<Beacon> implements Filterab
 
   @Override
   public Filter getFilter() {
+
     return new Filter() {
+
       @Override
       protected FilterResults performFiltering(CharSequence constraint) {
         FilterResults results = new FilterResults();
@@ -140,6 +142,7 @@ public class BeaconArrayAdapter extends ArrayAdapter<Beacon> implements Filterab
           notifyDataSetChanged();
         }
       }
+
     };
   }
 
