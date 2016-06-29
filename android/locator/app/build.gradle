@@ -6,7 +6,7 @@ android {
     buildToolsVersion "22.0.1"
 
     defaultConfig {
-        applicationId "com.google.sample.eddystonevalidator"
+        applicationId "com.callender.eddystone.locator"
         minSdkVersion 22
         targetSdkVersion 22
         versionCode 1

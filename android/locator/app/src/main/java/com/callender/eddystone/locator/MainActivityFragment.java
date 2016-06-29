@@ -61,8 +61,7 @@ public class MainActivityFragment extends Fragment {
 
   // An aggressive scan for nearby devices that reports immediately.
   private static final ScanSettings SCAN_SETTINGS =
-      new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).setReportDelay(0)
-          .build();
+      new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).setReportDelay(0).build();
 
   private static final Handler handler = new Handler(Looper.getMainLooper());
 
@@ -91,7 +90,9 @@ public class MainActivityFragment extends Fragment {
     arrayAdapter = new BeaconArrayAdapter(getActivity(), R.layout.beacon_list_item, arrayList);
     scanFilters = new ArrayList<>();
     scanFilters.add(new ScanFilter.Builder().setServiceUuid(EDDYSTONE_SERVICE_UUID).build());
+
     scanCallback = new ScanCallback() {
+
       @Override
       public void onScanResult(int callbackType, ScanResult result) {
         ScanRecord scanRecord = result.getScanRecord();
@@ -135,20 +136,20 @@ public class MainActivityFragment extends Fragment {
             break;
         }
       }
+
     };
 
     sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
-    onLostTimeoutMillis =
-        sharedPreferences.getInt(SettingsActivity.ON_LOST_TIMEOUT_SECS_KEY, 5) * 1000;
+    onLostTimeoutMillis = sharedPreferences.getInt(SettingsActivity.ON_LOST_TIMEOUT_SECS_KEY, 5) * 1000;
   }
 
   @Override
-  public View onCreateView(LayoutInflater inflater,
-      ViewGroup container,
-      Bundle savedInstanceState) {
+  public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
     View view = inflater.inflate(R.layout.fragment_main, container, false);
     filter = (EditText) view.findViewById(R.id.filter);
+
     filter.addTextChangedListener(new TextWatcher() {
+
       @Override
       public void beforeTextChanged(CharSequence s, int start, int count, int after) {
         // NOP
@@ -164,6 +165,7 @@ public class MainActivityFragment extends Fragment {
         arrayAdapter.getFilter().filter(filter.getText().toString());
       }
     });
+
     ListView listView = (ListView) view.findViewById(R.id.listView);
     listView.setAdapter(arrayAdapter);
     listView.setEmptyView(view.findViewById(R.id.placeholder));
@@ -184,8 +186,7 @@ public class MainActivityFragment extends Fragment {
 
     handler.removeCallbacksAndMessages(null);
 
-    int timeoutMillis =
-        sharedPreferences.getInt(SettingsActivity.ON_LOST_TIMEOUT_SECS_KEY, 5) * 1000;
+    int timeoutMillis = sharedPreferences.getInt(SettingsActivity.ON_LOST_TIMEOUT_SECS_KEY, 5) * 1000;
 
     if (timeoutMillis > 0) {  // 0 is special and means don't remove anything.
       onLostTimeoutMillis = timeoutMillis;
@@ -246,8 +247,7 @@ public class MainActivityFragment extends Fragment {
 
   // Attempts to create the scanner.
   private void init() {
-    BluetoothManager manager = (BluetoothManager) getActivity().getApplicationContext()
-        .getSystemService(Context.BLUETOOTH_SERVICE);
+    BluetoothManager manager = (BluetoothManager) getActivity().getApplicationContext().getSystemService(Context.BLUETOOTH_SERVICE);
     BluetoothAdapter btAdapter = manager.getAdapter();
     if (btAdapter == null) {
       showFinishingAlertDialog("Bluetooth Error", "Bluetooth not detected on device");
@@ -263,8 +263,7 @@ public class MainActivityFragment extends Fragment {
 
   // Pops an AlertDialog that quits the app on OK.
   private void showFinishingAlertDialog(String title, String message) {
-    new AlertDialog.Builder(getActivity()).setTitle(title).setMessage(message)
-        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+    new AlertDialog.Builder(getActivity()).setTitle(title).setMessage(message).setPositiveButton("OK", new DialogInterface.OnClickListener() {
           @Override
           public void onClick(DialogInterface dialogInterface, int i) {
             getActivity().finish();
@@ -282,22 +281,24 @@ public class MainActivityFragment extends Fragment {
       return;
     }
     Log.v(TAG, deviceAddress + " " + Utils.toHexString(serviceData));
+
     switch (serviceData[0]) {
+
       case Constants.UID_FRAME_TYPE:
         UidValidator.validate(deviceAddress, serviceData, beacon);
         break;
+
       case Constants.TLM_FRAME_TYPE:
-        TlmValidator.validate(deviceAddress, serviceData, beacon);
-        break;
       case Constants.URL_FRAME_TYPE:
-        UrlValidator.validate(deviceAddress, serviceData, beacon);
         break;
+
       default:
         String err = String.format("Invalid frame type byte %02X", serviceData[0]);
         beacon.frameStatus.invalidFrameType = err;
         logDeviceError(deviceAddress, err);
         break;
     }
+
     arrayAdapter.notifyDataSetChanged();
   }
 

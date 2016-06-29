@@ -2,5 +2,7 @@
 
     <string name="app_name">Locator</string>
     <string name="action_settings">Settings</string>
+    <string name="txpower_unknown">n/a</string>
+    <string name="distance_unknown">n/a</string>
 
 </resources>
