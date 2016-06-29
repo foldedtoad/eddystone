@@ -14,13 +14,12 @@
 
 package com.callender.eddystone.locator;
 
-        import android.util.Log;
-
+import android.util.Log;
 import java.util.Arrays;
+import java.util.Locale;
 
 import static com.callender.eddystone.locator.Constants.MAX_EXPECTED_TX_POWER;
 import static com.callender.eddystone.locator.Constants.MIN_EXPECTED_TX_POWER;
-
 
 /**
  * Basic validation of an Eddystone-UID frame. <p>
@@ -43,7 +42,7 @@ public class UidValidator {
 
         if (txPower < MIN_EXPECTED_TX_POWER || txPower > MAX_EXPECTED_TX_POWER) {
 
-            String err = String.format("Expected UID Tx power between %d and %d, got %d",
+            String err = String.format(Locale.US, "Expected UID Tx power between %d and %d, got %d",
                                         MIN_EXPECTED_TX_POWER, MAX_EXPECTED_TX_POWER, txPower);
 
             beacon.uidStatus.errTx = err;
