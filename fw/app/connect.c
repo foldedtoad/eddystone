@@ -398,6 +398,7 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
           }
 
         case BLE_GAP_EVT_TIMEOUT:
+            PUTS("BLE_GAP_EVT_TIMEOUT");
             if (p_ble_evt->evt.gap_evt.params.timeout.src == BLE_GAP_TIMEOUT_SRC_ADVERTISING) {
 
                 /* Set to Non-Connect Advertising mode */
