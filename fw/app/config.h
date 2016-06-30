@@ -88,12 +88,17 @@
 #define APP_GPIOTE_MAX_USERS            2
 
 /*
- *  The Beacon's measured RSSI at 1 meter distance in dBm 
+ *  The iBeacons devices report TXPower at 1 meter distance. 
  *  -61 dBm    0xC3
  *  -59 dBm    0xC5
  *  -56 dBm    0xC8
+ * 
+ *  The Eddystones report TXPower at 0 meter distance.
+ *  -30 dBm    0xE2
+ *  -28 dBm    0xE4
+ *  -26 dBm    0xE6
  */
-#define APP_MEASURED_RSSI               0xC3
+#define APP_MEASURED_RSSI               0xE4
 
 #define VBAT_MAX_IN_MV                  3300
 
