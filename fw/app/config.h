@@ -88,7 +88,10 @@
 #define APP_GPIOTE_MAX_USERS            2
 
 /*
- *  The Beacon's measured RSSI at 1 meter distance in dBm.
+ *  The Beacon's measured RSSI at 1 meter distance in dBm 
+ *  -61 dBm    0xC3
+ *  -59 dBm    0xC5
+ *  -56 dBm    0xC8
  */
 #define APP_MEASURED_RSSI               0xC3
 
